@@ -7,8 +7,8 @@ it only takes care of properties declared in the class interface.
 If you don't have Go installed on your system, you can grab directly the executable (inside `bin` folder) for
 your working platform. These are the supported platforms:
 
-* [Mac OSX 64bits](raw/bin/osx_64/ocgen)
-* [Linux 64bits](raw/master/bin/linux_64/ocgen)
+* [Mac OSX 64bits](bin/osx_64/ocgen?raw=true)
+* [Linux 64bits](bin/linux_64/ocgen?raw=true)
 
 If you have a distribution of Go installed, you can "go get" it directly
 
