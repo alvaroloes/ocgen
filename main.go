@@ -7,8 +7,16 @@ import (
 )
 
 func main() {
-	files := parser.GetParseableFiles("./fixtures")
-	fmt.Println(files)
+	// Get all the header files under the directory
+	fileNames := parser.GetParseableFiles("./fixtures")
+	fmt.Println(fileNames)
+
+	parser.ParseAndGetClassesInfo(fileNames[0])
+
+	// Parse each file
+	// for _, fileName := range fileNames {
+	// 	parser.ParseAndGetClassesInfo(fileName, "asdf")
+	// }
 
 	//TODO: In the future, this will have some flags
 	// flag.Parse()
