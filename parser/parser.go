@@ -11,7 +11,10 @@ import (
 
 const ocgenMarker = "OCGEN_AUTO"
 
-var interfaceRegexp = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*).*?` + ocgenMarker + `.*?@end)`)
+var headerRegexp = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*).*?` + ocgenMarker + `.*?@end)`)
+
+const headerRegexpClassNameIndex = 1
+
 var propertyRegexp = regexp.MustCompile(`\s?@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
 
 const headerFileExt = ".h"
@@ -69,10 +72,31 @@ func GetParseableFiles(rootPath string) []string {
 	return headerFiles
 }
 
-func ParseAndGetClassesInfo(hFileName string) ([]ObjCClassInfo, error) {
-	classes, err := classesFromHeader(hFileName)
+func ParseAndGetClassesInfo(headerFileName string) ([]ObjCClassInfo, error) {
+	headerFileBytes, err := ioutil.ReadFile(headerFileName)
+	if err != nil {
+		log.Printf("Unable to open header file %v\n", err)
+		return nil, err
+	}
 
-	return classes, err
+	/*implFileBytes*/ _, err = ioutil.ReadFile(implFileNameFromHeader(headerFileName))
+	if err != nil {
+		log.Printf("Unable to open implementation file: %v\n", err)
+		return nil, err
+	}
+
+	matchedInterfaces := headerRegexp.FindAllSubmatchIndex(headerFileBytes, -1)
+
+	fmt.Println(len(matchedInterfaces))
+
+	for _, matchedInterface := range matchedInterfaces {
+
+		for i := 0; i < len(matchedInterface); i += 2 {
+			fmt.Println(string(headerFileBytes[matchedInterface[i]:matchedInterface[i+1]]))
+		}
+	}
+
+	return []ObjCClassInfo{}, nil
 
 	// mFileName := mFileNameFromHeader(headerFileName)
 	// mFile, err := os.Open(mFileName)
@@ -84,23 +108,7 @@ func ParseAndGetClassesInfo(hFileName string) ([]ObjCClassInfo, error) {
 }
 
 func classesFromHeader(hFileName string) ([]ObjCClassInfo, error) {
-	fileBytes, err := ioutil.ReadFile(hFileName)
-	if err != nil {
-		log.Println("Unable to open header file %s", hFileName)
-		return nil, err
-	}
-
-	matchedInterfaces := interfaceRegexp.FindAllSubmatchIndex(fileBytes, -1)
-	fmt.Println(len(matchedInterfaces))
-	for _, match := range matchedInterfaces {
-
-		for i := 0; i < len(match); i += 2 {
-			fmt.Println(string(fileBytes[match[i]:match[i+1]]))
-		}
-	}
-
 	return []ObjCClassInfo{}, nil
-
 	//
 
 	// info := ObjCClassInfo{}
@@ -129,6 +137,6 @@ func classesFromHeader(hFileName string) ([]ObjCClassInfo, error) {
 	// return &info, nil
 }
 
-func mFileNameFromHeader(headerFileName string) string {
+func implFileNameFromHeader(headerFileName string) string {
 	return headerFileName[:len(headerFileName)-len(headerFileExt)] + ".m"
 }
