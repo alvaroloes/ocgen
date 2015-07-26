@@ -11,7 +11,9 @@ func main() {
 	fileNames := parser.GetParseableFiles("./fixtures")
 	fmt.Println(fileNames)
 
-	parser.ParseAndGetClassesInfo(fileNames[0])
+	classesInfo, _ := parser.ParseAndGetClassesInfo(fileNames[0])
+
+	fmt.Printf("%+v", classesInfo)
 
 	// Parse each file
 	// for _, fileName := range fileNames {

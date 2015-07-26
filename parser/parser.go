@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -91,7 +90,7 @@ func ParseAndGetClassesInfo(headerFileName string) ([]ObjCClassInfo, error) {
 	classesInfo := getClassesFromHeaderFile(headerFileBytes)
 	fillClassesInfoFromImplFile(implFile, classesInfo)
 
-	return []ObjCClassInfo{}, nil
+	return classesInfo, nil
 
 	// mFileName := mFileNameFromHeader(headerFileName)
 	// mFile, err := os.Open(mFileName)
@@ -108,20 +107,17 @@ func implFileNameFromHeader(headerFileName string) string {
 
 func getClassesFromHeaderFile(headerFileBytes []byte) []ObjCClassInfo {
 	matchedInterfaces := headerRegexp.FindAllSubmatchIndex(headerFileBytes, -1)
+	classesInfo := make([]ObjCClassInfo, len(matchedInterfaces))
 
-	fmt.Println(len(matchedInterfaces))
-
-	for _, matchedInterface := range matchedInterfaces {
+	for i, matchedInterface := range matchedInterfaces {
 		start := matchedInterface[headerRegexpClassNameIndex*2]
 		end := matchedInterface[headerRegexpClassNameIndex*2+1]
-		className := headerFileBytes[start:end]
 
-		fmt.Println(string(className))
-		// for i := 0; i < len(matchedInterface); i += 2 {
-		// 	fmt.Println(string(headerFileBytes[matchedInterface[i]:matchedInterface[i+1]]))
-		// }
+		classesInfo[i] = ObjCClassInfo{
+			Name: string(headerFileBytes[start:end]),
+		}
 	}
-	return nil
+	return classesInfo
 }
 
 func fillClassesInfoFromImplFile(implFile *os.File, classesInfo []ObjCClassInfo) {
