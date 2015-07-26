@@ -20,11 +20,14 @@ var propertyRegexp = regexp.MustCompile(`\s?@property\s?(?:\((.*)\))?\s?([^\s\*]
 const headerFileExt = ".h"
 
 type ObjCClassInfo struct {
+	// These fields are extracted from the header file
+	Name              string
 	MFile             os.File
 	Properties        []Property
 	ConformsNSCoding  bool
 	ConformsNSCopying bool
 
+	// These fields are extracted from the implementation file
 	NSCodingInfo struct {
 		InitWithCoder   MethodInfo
 		EncodeWithCoder MethodInfo
@@ -35,8 +38,7 @@ type ObjCClassInfo struct {
 }
 
 type MethodInfo struct {
-	PosStart int64
-	PosEnd   int64
+	PosStart, PosEnd int64
 }
 
 type Property struct {
@@ -79,22 +81,15 @@ func ParseAndGetClassesInfo(headerFileName string) ([]ObjCClassInfo, error) {
 		return nil, err
 	}
 
-	/*implFileBytes*/ _, err = ioutil.ReadFile(implFileNameFromHeader(headerFileName))
+	implFile, err := os.Open(implFileNameFromHeader(headerFileName))
 	if err != nil {
 		log.Printf("Unable to open implementation file: %v\n", err)
 		return nil, err
 	}
 
-	matchedInterfaces := headerRegexp.FindAllSubmatchIndex(headerFileBytes, -1)
-
-	fmt.Println(len(matchedInterfaces))
-
-	for _, matchedInterface := range matchedInterfaces {
-
-		for i := 0; i < len(matchedInterface); i += 2 {
-			fmt.Println(string(headerFileBytes[matchedInterface[i]:matchedInterface[i+1]]))
-		}
-	}
+	//TODO: Create these functions
+	classesInfo := getClassesFromHeaderFile(headerFileBytes)
+	fillClassesInfoFromImplFile(implFile, classesInfo)
 
 	return []ObjCClassInfo{}, nil
 
@@ -104,6 +99,32 @@ func ParseAndGetClassesInfo(headerFileName string) ([]ObjCClassInfo, error) {
 	// 	log.Println("Unable to open implementation file %s", mFileName)
 	// 	return nil, err
 	// }
+
+}
+
+func implFileNameFromHeader(headerFileName string) string {
+	return headerFileName[:len(headerFileName)-len(headerFileExt)] + ".m"
+}
+
+func getClassesFromHeaderFile(headerFileBytes []byte) []ObjCClassInfo {
+	matchedInterfaces := headerRegexp.FindAllSubmatchIndex(headerFileBytes, -1)
+
+	fmt.Println(len(matchedInterfaces))
+
+	for _, matchedInterface := range matchedInterfaces {
+		start := matchedInterface[headerRegexpClassNameIndex*2]
+		end := matchedInterface[headerRegexpClassNameIndex*2+1]
+		className := headerFileBytes[start:end]
+
+		fmt.Println(string(className))
+		// for i := 0; i < len(matchedInterface); i += 2 {
+		// 	fmt.Println(string(headerFileBytes[matchedInterface[i]:matchedInterface[i+1]]))
+		// }
+	}
+	return nil
+}
+
+func fillClassesInfoFromImplFile(implFile *os.File, classesInfo []ObjCClassInfo) {
 
 }
 
@@ -135,8 +156,4 @@ func classesFromHeader(hFileName string) ([]ObjCClassInfo, error) {
 	// }
 
 	// return &info, nil
-}
-
-func implFileNameFromHeader(headerFileName string) string {
-	return headerFileName[:len(headerFileName)-len(headerFileExt)] + ".m"
 }
