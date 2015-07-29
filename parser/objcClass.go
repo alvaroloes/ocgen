@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"os"
 	"regexp"
 	"strings"
 )
@@ -11,9 +10,9 @@ var (
 	propertyRegexp  = regexp.MustCompile(`\s?@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
 )
 
+const classNameRegexpIndex = 1
 const (
-	classNameRegexpIndex    = 1
-	propertyRegexpAttrIndex = 1
+	propertyRegexpAttrIndex = iota + 1
 	propertyRegexpClassIndex
 	propertyRegexpPointerIndex
 	propertyRegexpNameIndex
@@ -22,8 +21,8 @@ const (
 type ObjCClass struct {
 	// These fields are extracted from the header file
 	Name              string
-	MFile             *os.File
-	Properties        []Property
+	ImplFileName      string
+	Properties        []Property // These are also extracted form the implementation file
 	ConformsNSCoding  bool
 	ConformsNSCopying bool
 
@@ -47,14 +46,23 @@ type Property struct {
 	IsPointer   bool
 }
 
-func NewObjCClass(interfaceBytes []byte, implFile *os.File) ObjCClass {
-	matchedName := classNameRegexp.FindSubmatch(interfaceBytes)
+//TODO: pass the class name here
+func NewObjCClass(hInterfaceBytes, mInterfaceBytes, implBytes []byte, implFileName string) ObjCClass {
+	matchedName := classNameRegexp.FindSubmatch(hInterfaceBytes)
+	propertiesFromHeader := extractProperties(hInterfaceBytes)
+	//TODO: Extract properties from @interface statements in the implementation file
 
 	class := ObjCClass{
-		Name:       string(matchedName[classNameRegexpIndex]),
-		MFile:      implFile,
-		Properties: extractProperties(interfaceBytes),
+		Name:         string(matchedName[classNameRegexpIndex]),
+		ImplFileName: implFileName,
+		Properties:   propertiesFromHeader,
+		//TODO: Detect if the class conforms the protocols taking into account the parent protocols too
+		ConformsNSCoding:  true,
+		ConformsNSCopying: true,
 	}
+
+	extractProtocolMethodsInfo(&class, implBytes)
+
 	return class
 }
 
@@ -64,13 +72,13 @@ func extractProperties(interfaceBytes []byte) []Property {
 	matchedProperties := propertyRegexp.FindAllSubmatch(interfaceBytes, -1)
 	for _, matchedProperty := range matchedProperties {
 		//Split the attributes string and trim each of them
-		attributes := strings.Split(string(matchedProperty[1]), ",")
+		attributes := strings.Split(string(matchedProperty[propertyRegexpAttrIndex]), ",")
 		for i, attr := range attributes {
 			attributes[i] = strings.TrimSpace(attr)
 		}
-		class := string(matchedProperty[2])
-		pointer := string(matchedProperty[3])
-		name := string(matchedProperty[4])
+		class := string(matchedProperty[propertyRegexpClassIndex])
+		pointer := string(matchedProperty[propertyRegexpPointerIndex])
+		name := string(matchedProperty[propertyRegexpNameIndex])
 
 		// Add this property to the info
 		properties = append(properties, Property{
@@ -82,4 +90,8 @@ func extractProperties(interfaceBytes []byte) []Property {
 	}
 
 	return properties
+}
+
+func extractProtocolMethodsInfo(class *ObjCClass, implFileBytes []byte) {
+
 }

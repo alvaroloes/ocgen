@@ -13,7 +13,10 @@ const (
 	headerFileExt = ".h"
 )
 
-var interfaceRegexp = regexp.MustCompile(`(?ms:^\s?@interface.*?` + ocgenMarker + `.*?@end)`)
+var (
+	interfaceRegexp      = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*).*?` + ocgenMarker + `.*?@end)`)
+	implementationRegexp = regexp.MustCompile(`(?ms:^\s?@implementation\s+([^\s]*).*?@end)`)
+)
 
 func GetParseableFiles(rootPath string) []string {
 	var headerFiles []string
@@ -31,7 +34,6 @@ func GetParseableFiles(rootPath string) []string {
 		if isHeader {
 			headerFiles = append(headerFiles, path)
 		}
-
 		return nil
 	})
 
@@ -49,13 +51,14 @@ func ParseAndGetClassesInfo(headerFileName string) ([]ObjCClass, error) {
 		return nil, err
 	}
 
-	implFile, err := os.Open(implFileNameFromHeader(headerFileName))
+	implFileName := implFileNameFromHeader(headerFileName)
+	implFileBytes, err := ioutil.ReadFile(implFileName)
 	if err != nil {
 		log.Printf("Unable to open implementation file: %v\n", err)
 		return nil, err
 	}
 
-	classesInfo := getClasses(headerFileBytes, implFile)
+	classesInfo := getClasses(headerFileBytes, implFileBytes, implFileName)
 
 	return classesInfo, nil
 }
@@ -64,20 +67,40 @@ func implFileNameFromHeader(headerFileName string) string {
 	return headerFileName[:len(headerFileName)-len(headerFileExt)] + ".m"
 }
 
-func getClasses(headerFileBytes []byte, implFile *os.File) []ObjCClass {
-	matchedInterfaces := interfaceRegexp.FindAllIndex(headerFileBytes, -1)
-
-	if matchedInterfaces == nil {
-		return []ObjCClass{} // No classes in this file
+func getClasses(headerFileBytes, implFileBytes []byte, implFileName string) []ObjCClass {
+	matchedHInterfaces := interfaceRegexp.FindAllSubmatchIndex(headerFileBytes, -1)
+	if matchedHInterfaces == nil {
+		return []ObjCClass{} // No interfaces in header file
 	}
 
-	classesInfo := make([]ObjCClass, len(matchedInterfaces))
+	// TODO: No need for this. Use dynamic regexp here
+	matchedImplementations := implementationRegexp.FindAllSubmatchIndex(implFileBytes, -1)
+	if matchedImplementations == nil {
+		return []ObjCClass{} // No implementations? This would be so weird
+	}
 
-	for i, matchedInterface := range matchedInterfaces {
-		start := matchedInterface[0]
-		end := matchedInterface[1]
+	// TODO: No need for this. Use dynamic regexp here
+	//matchedMInterfaces := interfaceRegexp.FindAllSubmatchIndex(implFileBytes, -1)
 
-		classesInfo[i] = NewObjCClass(headerFileBytes[start:end], implFile)
+	classesInfo := make([]ObjCClass, len(matchedHInterfaces))
+
+	for i, matchedInterface := range matchedHInterfaces {
+		className := string(headerFileBytes[matchedInterface[2]:matchedInterface[3]])
+		interfaceHBytes := headerFileBytes[matchedInterface[0]:matchedInterface[1]]
+		interfaceMBytes := []byte{} //TODO
+		implBytes := implBytesForClassName(className, matchedImplementations, implFileBytes)
+
+		classesInfo[i] = NewObjCClass(interfaceHBytes, interfaceMBytes, implBytes, implFileName)
 	}
 	return classesInfo
+}
+
+func implBytesForClassName(className string, matchedImplementations [][]int, implFileBytes []byte) []byte {
+	for _, matchedImpl := range matchedImplementations {
+		implName := string(implFileBytes[matchedImpl[2]:matchedImpl[3]])
+		if implName == className {
+			return implFileBytes[matchedImpl[0]:matchedImpl[1]]
+		}
+	}
+	return nil
 }
