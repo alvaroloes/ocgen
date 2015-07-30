@@ -6,11 +6,9 @@ import (
 )
 
 var (
-	classNameRegexp = regexp.MustCompile(`@interface\s+([^:<\s]*)`)
-	propertyRegexp  = regexp.MustCompile(`\s?@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
+	propertyRegexp = regexp.MustCompile(`\s?@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
 )
 
-const classNameRegexpIndex = 1
 const (
 	propertyRegexpAttrIndex = iota + 1
 	propertyRegexpClassIndex
@@ -46,16 +44,14 @@ type Property struct {
 	IsPointer   bool
 }
 
-//TODO: pass the class name here
-func NewObjCClass(hInterfaceBytes, mInterfaceBytes, implBytes []byte, implFileName string) ObjCClass {
-	matchedName := classNameRegexp.FindSubmatch(hInterfaceBytes)
-	propertiesFromHeader := extractProperties(hInterfaceBytes)
-	//TODO: Extract properties from @interface statements in the implementation file
+func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes []byte, implFileName string) ObjCClass {
+	propertiesFromH := extractProperties(hInterfaceBytes)
+	propertiesFromM := extractProperties(mInterfaceBytes)
 
 	class := ObjCClass{
-		Name:         string(matchedName[classNameRegexpIndex]),
+		Name:         className,
 		ImplFileName: implFileName,
-		Properties:   propertiesFromHeader,
+		Properties:   mergeProperties(propertiesFromH, propertiesFromM),
 		//TODO: Detect if the class conforms the protocols taking into account the parent protocols too
 		ConformsNSCoding:  true,
 		ConformsNSCopying: true,
@@ -90,6 +86,13 @@ func extractProperties(interfaceBytes []byte) []Property {
 	}
 
 	return properties
+}
+
+func mergeProperties(propertiesFromH, propertiesFromM []Property) []Property {
+	// TODO:
+	// - Join both slices
+	// - Remove the readonly properties that has a corresponding readwrite version in M
+	return propertiesFromH
 }
 
 func extractProtocolMethodsInfo(class *ObjCClass, implFileBytes []byte) {

@@ -88,7 +88,7 @@ func getClasses(headerFileBytes, implFileBytes []byte, implFileName string) []Ob
 		implRegexp := regexp.MustCompile(`(?ms:^\s?@implementation\s+` + className + `\s+.*?@end)`)
 		implBytes := implRegexp.Find(implFileBytes)
 
-		classesInfo[i] = NewObjCClass(interfaceHBytes, interfaceMBytes, implBytes, implFileName)
+		classesInfo[i] = NewObjCClass(className, interfaceHBytes, interfaceMBytes, implBytes, implFileName)
 	}
 	return classesInfo
 }
