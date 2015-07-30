@@ -1,12 +1,14 @@
 package parser
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
 
 var (
-	propertyRegexp = regexp.MustCompile(`\s?@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
+	propertyRegexp         = regexp.MustCompile(`@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
+	codingInitMethodRegexp = regexp.MustCompile(`\s?-.*initWithCoder:`)
 )
 
 const (
@@ -96,5 +98,38 @@ func mergeProperties(propertiesFromH, propertiesFromM []Property) []Property {
 }
 
 func extractProtocolMethodsInfo(class *ObjCClass, implFileBytes []byte) {
+	matchedCodingInitMethod := codingInitMethodRegexp.FindIndex(implFileBytes)
 
+	if matchedCodingInitMethod == nil {
+		// TODO: set something to indicate that the methods should be added to the end
+		return
+	}
+
+	bodyStart := matchedCodingInitMethod[1]
+	relativeBodyEnd := relativeEndOfMethodBody(implFileBytes[bodyStart:])
+	methodStart := matchedCodingInitMethod[0]
+	methodEnd := bodyStart + relativeBodyEnd
+
+	//TODO: generalize this to extract info for all the methods
+
+	fmt.Println(string(implFileBytes[methodStart:methodEnd]))
+}
+
+func relativeEndOfMethodBody(bytes []byte) int {
+	numBrackets := 0
+	insideBody := false
+
+	for i, b := range bytes {
+		if b == '{' {
+			insideBody = true
+			numBrackets++
+		} else if b == '}' {
+			numBrackets--
+		}
+
+		if insideBody && numBrackets <= 0 {
+			return i + 1
+		}
+	}
+	return -1
 }
