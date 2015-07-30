@@ -13,10 +13,9 @@ const (
 	headerFileExt = ".h"
 )
 
-var (
-	interfaceRegexp      = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*).*?` + ocgenMarker + `.*?@end)`)
-	implementationRegexp = regexp.MustCompile(`(?ms:^\s?@implementation\s+([^\s]*).*?@end)`)
-)
+var interfaceRegexp = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*).*?` + ocgenMarker + `.*?@end)`)
+
+const interfaceRegexpNameIndex = 1
 
 func GetParseableFiles(rootPath string) []string {
 	var headerFiles []string
@@ -68,27 +67,26 @@ func implFileNameFromHeader(headerFileName string) string {
 }
 
 func getClasses(headerFileBytes, implFileBytes []byte, implFileName string) []ObjCClass {
-	matchedHInterfaces := interfaceRegexp.FindAllSubmatchIndex(headerFileBytes, -1)
+	// Search for all the interfaces in the header file
+	matchedHInterfaces := interfaceRegexp.FindAllSubmatch(headerFileBytes, -1)
 	if matchedHInterfaces == nil {
 		return []ObjCClass{} // No interfaces in header file
 	}
 
-	// TODO: No need for this. Use dynamic regexp here
-	matchedImplementations := implementationRegexp.FindAllSubmatchIndex(implFileBytes, -1)
-	if matchedImplementations == nil {
-		return []ObjCClass{} // No implementations? This would be so weird
-	}
-
-	// TODO: No need for this. Use dynamic regexp here
-	//matchedMInterfaces := interfaceRegexp.FindAllSubmatchIndex(implFileBytes, -1)
-
 	classesInfo := make([]ObjCClass, len(matchedHInterfaces))
-
 	for i, matchedInterface := range matchedHInterfaces {
-		className := string(headerFileBytes[matchedInterface[2]:matchedInterface[3]])
-		interfaceHBytes := headerFileBytes[matchedInterface[0]:matchedInterface[1]]
-		interfaceMBytes := []byte{} //TODO
-		implBytes := implBytesForClassName(className, matchedImplementations, implFileBytes)
+		// Get the whole @interface bytes from header file
+		interfaceHBytes := matchedInterface[0]
+		// Get the class name to create the regexp for searching in the implementation file
+		className := string(matchedInterface[interfaceRegexpNameIndex])
+
+		// Get the whole @interface bytes from the implementation file
+		classInterfaceRegexp := regexp.MustCompile(`(?ms:^\s?@interface\s+` + className + `\s+.*?@end)`)
+		interfaceMBytes := classInterfaceRegexp.Find(implFileBytes)
+
+		// Get the whole @implementation from the implementation file
+		implRegexp := regexp.MustCompile(`(?ms:^\s?@implementation\s+` + className + `\s+.*?@end)`)
+		implBytes := implRegexp.Find(implFileBytes)
 
 		classesInfo[i] = NewObjCClass(interfaceHBytes, interfaceMBytes, implBytes, implFileName)
 	}
