@@ -86,9 +86,10 @@ func getClasses(headerFileBytes, implFileBytes []byte, implFileName string) []Ob
 
 		// Get the whole @implementation from the implementation file
 		implRegexp := regexp.MustCompile(`(?ms:^\s?@implementation\s+` + className + `\s+.*?@end)`)
-		implBytes := implRegexp.Find(implFileBytes)
+		matchedImpl := implRegexp.FindIndex(implFileBytes)
+		implBytes := implFileBytes[matchedImpl[0]:matchedImpl[1]]
 
-		classesInfo[i] = NewObjCClass(className, interfaceHBytes, interfaceMBytes, implBytes, implFileName)
+		classesInfo[i] = NewObjCClass(className, interfaceHBytes, interfaceMBytes, implBytes, matchedImpl[0], implFileName)
 	}
 	return classesInfo
 }

@@ -2,13 +2,19 @@ package parser
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 )
 
 var (
-	propertyRegexp         = regexp.MustCompile(`@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
-	codingInitMethodRegexp = regexp.MustCompile(`\s?-.*initWithCoder:`)
+	endRegexp      = regexp.MustCompile(`\s?@end`)
+	propertyRegexp = regexp.MustCompile(`@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
+)
+var (
+	codingInitMethodRegexp   = regexp.MustCompile(`\s?-.*initWithCoder:`)
+	codingEncodeMedhotRegexp = regexp.MustCompile(`\s?-.*encodeWithCoder:`)
+	copyingMethodRexexp      = regexp.MustCompile(`\s?-.*copyWithZone:`)
 )
 
 const (
@@ -37,7 +43,7 @@ type ObjCClass struct {
 }
 
 type MethodInfo struct {
-	PosStart, PosEnd int64
+	PosStart, PosEnd int
 }
 
 type Property struct {
@@ -46,7 +52,7 @@ type Property struct {
 	IsPointer   bool
 }
 
-func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes []byte, implFileName string) ObjCClass {
+func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes []byte, implBytesOffset int, implFileName string) ObjCClass {
 	propertiesFromH := extractProperties(hInterfaceBytes)
 	propertiesFromM := extractProperties(mInterfaceBytes)
 
@@ -59,7 +65,9 @@ func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes 
 		ConformsNSCopying: true,
 	}
 
-	extractProtocolMethodsInfo(&class, implBytes)
+	class.NSCodingInfo.InitWithCoder = extractMethodInfo(className, codingInitMethodRegexp, implBytes, implBytesOffset)
+	class.NSCodingInfo.EncodeWithCoder = extractMethodInfo(className, codingEncodeMedhotRegexp, implBytes, implBytesOffset)
+	class.NSCopyingInfo.CopyWithZone = extractMethodInfo(className, copyingMethodRexexp, implBytes, implBytesOffset)
 
 	return class
 }
@@ -97,22 +105,28 @@ func mergeProperties(propertiesFromH, propertiesFromM []Property) []Property {
 	return propertiesFromH
 }
 
-func extractProtocolMethodsInfo(class *ObjCClass, implFileBytes []byte) {
-	matchedCodingInitMethod := codingInitMethodRegexp.FindIndex(implFileBytes)
+func extractMethodInfo(className string, methodSignatureRegexp *regexp.Regexp, implBytes []byte, implBytesOffset int) (methodInfo MethodInfo) {
+	matchedMethod := methodSignatureRegexp.FindIndex(implBytes)
 
-	if matchedCodingInitMethod == nil {
-		// TODO: set something to indicate that the methods should be added to the end
-		return
+	if matchedMethod == nil {
+		log.Printf(`Method not found (Regexp: %v) in class "%v"\n`, methodSignatureRegexp, className)
+		// There is no previous method, the position for the new one will be just before @end
+		matchedEnd := endRegexp.FindIndex(implBytes)
+		methodInfo.PosStart, methodInfo.PosEnd = matchedEnd[0], matchedEnd[0]
+	} else {
+		methodInfo.PosStart = matchedMethod[0]
+		bodyStart := matchedMethod[1]
+		relativeBodyEnd := relativeEndOfMethodBody(implBytes[bodyStart:])
+		methodInfo.PosEnd = bodyStart + relativeBodyEnd
 	}
 
-	bodyStart := matchedCodingInitMethod[1]
-	relativeBodyEnd := relativeEndOfMethodBody(implFileBytes[bodyStart:])
-	methodStart := matchedCodingInitMethod[0]
-	methodEnd := bodyStart + relativeBodyEnd
+	fmt.Println(methodInfo)
+	fmt.Println(string(implBytes[methodInfo.PosStart:methodInfo.PosEnd]))
 
-	//TODO: generalize this to extract info for all the methods
+	methodInfo.PosStart += implBytesOffset
+	methodInfo.PosEnd += implBytesOffset
 
-	fmt.Println(string(implFileBytes[methodStart:methodEnd]))
+	return
 }
 
 func relativeEndOfMethodBody(bytes []byte) int {
