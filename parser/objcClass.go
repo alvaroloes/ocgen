@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -68,7 +67,6 @@ func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes 
 	class.NSCodingInfo.InitWithCoder = extractMethodInfo(className, codingInitMethodRegexp, implBytes, implBytesOffset)
 	class.NSCodingInfo.EncodeWithCoder = extractMethodInfo(className, codingEncodeMedhotRegexp, implBytes, implBytesOffset)
 	class.NSCopyingInfo.CopyWithZone = extractMethodInfo(className, copyingMethodRexexp, implBytes, implBytesOffset)
-
 	return class
 }
 
@@ -120,8 +118,8 @@ func extractMethodInfo(className string, methodSignatureRegexp *regexp.Regexp, i
 		methodInfo.PosEnd = bodyStart + relativeBodyEnd
 	}
 
-	fmt.Println(methodInfo)
-	fmt.Println(string(implBytes[methodInfo.PosStart:methodInfo.PosEnd]))
+	//fmt.Println(methodInfo)
+	//fmt.Println(string(implBytes[methodInfo.PosStart:methodInfo.PosEnd]))
 
 	methodInfo.PosStart += implBytesOffset
 	methodInfo.PosEnd += implBytesOffset

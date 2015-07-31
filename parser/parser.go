@@ -43,7 +43,7 @@ func GetParseableFiles(rootPath string) []string {
 	return headerFiles
 }
 
-func ParseAndGetClassesInfo(headerFileName string) ([]ObjCClass, error) {
+func Parse(headerFileName string) ([]ObjCClass, error) {
 	headerFileBytes, err := ioutil.ReadFile(headerFileName)
 	if err != nil {
 		log.Printf("Unable to open header file %v\n", err)
