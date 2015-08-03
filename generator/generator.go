@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -18,11 +17,11 @@ func GenerateMethods(classFile *parser.ObjCClassFile) error {
 		return err
 	}
 
-	fileBytes, err := ioutil.ReadFile(class.ImplFileName)
-	if err != nil {
-		log.Printf("Class: %v. Unable to open implementation file: %v", class.Name, class.ImplFileName)
-		return err
-	}
+	// fileBytes, err := ioutil.ReadFile(classFile.MName)
+	// if err != nil {
+	// 	log.Printf("Unable to open implementation file: %v", classFile.MName)
+	// 	return err
+	// }
 
 	// TODO Open the MFile for writing (os.Create)
 
@@ -53,6 +52,7 @@ func GenerateMethods(classFile *parser.ObjCClassFile) error {
 			log.Printf("Class: %v. Error when generating NSCopying.copyWithZone method: %v\n", class.Name, err)
 		}
 	}
+	return nil
 }
 
 func getNSCopying(class *parser.ObjCClass) ([]byte, error) {
