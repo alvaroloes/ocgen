@@ -43,7 +43,7 @@ func GetParseableFiles(rootPath string) []string {
 	return headerFiles
 }
 
-func Parse(headerFileName string) ([]ObjCClass, error) {
+func Parse(headerFileName string) (*ObjCClassFile, error) {
 	headerFileBytes, err := ioutil.ReadFile(headerFileName)
 	if err != nil {
 		log.Printf("Unable to open header file %v\n", err)
@@ -57,16 +57,20 @@ func Parse(headerFileName string) ([]ObjCClass, error) {
 		return nil, err
 	}
 
-	classesInfo := getClasses(headerFileBytes, implFileBytes, implFileName)
+	classFile := ObjCClassFile{
+		HName:   headerFileName,
+		MName:   implFileName,
+		Classes: getClasses(headerFileBytes, implFileBytes),
+	}
 
-	return classesInfo, nil
+	return &classFile, nil
 }
 
 func implFileNameFromHeader(headerFileName string) string {
 	return headerFileName[:len(headerFileName)-len(headerFileExt)] + ".m"
 }
 
-func getClasses(headerFileBytes, implFileBytes []byte, implFileName string) []ObjCClass {
+func getClasses(headerFileBytes, implFileBytes []byte) []ObjCClass {
 	// Search for all the interfaces in the header file
 	matchedHInterfaces := interfaceRegexp.FindAllSubmatch(headerFileBytes, -1)
 	if matchedHInterfaces == nil {
@@ -89,7 +93,7 @@ func getClasses(headerFileBytes, implFileBytes []byte, implFileName string) []Ob
 		matchedImpl := implRegexp.FindIndex(implFileBytes)
 		implBytes := implFileBytes[matchedImpl[0]:matchedImpl[1]]
 
-		classesInfo[i] = NewObjCClass(className, interfaceHBytes, interfaceMBytes, implBytes, matchedImpl[0], implFileName)
+		classesInfo[i] = NewObjCClass(className, interfaceHBytes, interfaceMBytes, implBytes, matchedImpl[0])
 	}
 	return classesInfo
 }

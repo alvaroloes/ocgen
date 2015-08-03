@@ -9,8 +9,9 @@ import (
 	"github.com/alvaroloes/ocgen/parser"
 )
 
-func GenerateMethods(classes []parser.ObjCClass) {
-	for _, class := range classes {
+func GenerateMethods(classFile *parser.ObjCClassFile) {
+	createBackup(classFile.MName)
+	for _, class := range classFile.Classes {
 		//TODO: Make a backup of the file and override original file
 		// implSrcFile, err := ioutil.ReadFile(class.ImplFileName)
 		// if err != nil {
@@ -71,4 +72,23 @@ func getNSCodingEncode(class *parser.ObjCClass) ([]byte, error) {
 
 func writeMethod(methodText []byte, methodInfo parser.MethodInfo, writer io.Writer) {
 
+}
+
+func createBackup(fileName string) {
+	// s, err := os.Open(src)
+	// if err != nil {
+	// 	return err
+	// }
+	// // no need to check errors on read only file, we already got everything
+	// // we need from the filesystem, so nothing can go wrong now.
+	// defer s.Close()
+	// d, err := os.Create(dst)
+	// if err != nil {
+	// 	return err
+	// }
+	// if _, err := io.Copy(d, s); err != nil {
+	// 	d.Close()
+	// 	return err
+	// }
+	// return d.Close()
 }

@@ -12,8 +12,8 @@ func main() {
 	fileNames := parser.GetParseableFiles("./fixtures")
 	fmt.Println(fileNames)
 
-	classesInfo, _ := parser.Parse(fileNames[0])
-	generator.GenerateMethods(classesInfo)
+	classFile, _ := parser.Parse(fileNames[0])
+	generator.GenerateMethods(classFile)
 
 	// Parse each file
 	// for _, fileName := range fileNames {

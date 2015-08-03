@@ -23,10 +23,14 @@ const (
 	propertyRegexpNameIndex
 )
 
+type ObjCClassFile struct {
+	HName, MName string
+	Classes      []ObjCClass
+}
+
 type ObjCClass struct {
 	// These fields are extracted from the header file
 	Name              string
-	ImplFileName      string
 	Properties        []Property // These are also extracted form the implementation file
 	ConformsNSCoding  bool
 	ConformsNSCopying bool
@@ -51,14 +55,13 @@ type Property struct {
 	IsPointer   bool
 }
 
-func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes []byte, implBytesOffset int, implFileName string) ObjCClass {
+func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes []byte, implBytesOffset int) ObjCClass {
 	propertiesFromH := extractProperties(hInterfaceBytes)
 	propertiesFromM := extractProperties(mInterfaceBytes)
 
 	class := ObjCClass{
-		Name:         className,
-		ImplFileName: implFileName,
-		Properties:   mergeProperties(propertiesFromH, propertiesFromM),
+		Name:       className,
+		Properties: mergeProperties(propertiesFromH, propertiesFromM),
 		//TODO: Detect if the class conforms the protocols taking into account the parent protocols too
 		ConformsNSCoding:  true,
 		ConformsNSCopying: true,
