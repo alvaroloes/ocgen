@@ -4,29 +4,32 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/alvaroloes/ocgen/parser"
 )
 
-func GenerateMethods(classFile *parser.ObjCClassFile) {
-	createBackup(classFile.MName)
+var BackupFileExt = ".backup"
+
+func GenerateMethods(classFile *parser.ObjCClassFile) error {
+	if err := createBackup(classFile.MName); err != nil {
+		return err
+	}
+
+	fileBytes, err := ioutil.ReadFile(class.ImplFileName)
+	if err != nil {
+		log.Printf("Class: %v. Unable to open implementation file: %v", class.Name, class.ImplFileName)
+		return err
+	}
+
+	// TODO Open the MFile for writing (os.Create)
+
 	for _, class := range classFile.Classes {
-		//TODO: Make a backup of the file and override original file
-		// implSrcFile, err := ioutil.ReadFile(class.ImplFileName)
-		// if err != nil {
-		// 	log.Printf("Class: %v. Unable to open implementation file: %v", class.Name, class.ImplFileName)
-		// 	continue
-		// }
 
-		// implDstFile, err := os.Create(class.ImplFileName + ".ocgen")
-		// if err != nil {
-		// 	log.Printf("Class: %v. Unable to create implementation file: %v", class.Name, class.ImplFileName)
-		// 	continue
-		// }
-
-		//TODO: Get the methods sorted by appearance
-		//TODO: Write all before the method, write method, write all after it and before the following method
+		//TODO: insert the methods bytes in the fileBytes slice in the corresponding location
+		//TODO: Write the fileBytes into the MFile
 
 		codingInitMethod, err := getNSCodingInit(&class)
 		if err == nil {
@@ -74,21 +77,22 @@ func writeMethod(methodText []byte, methodInfo parser.MethodInfo, writer io.Writ
 
 }
 
-func createBackup(fileName string) {
-	// s, err := os.Open(src)
-	// if err != nil {
-	// 	return err
-	// }
-	// // no need to check errors on read only file, we already got everything
-	// // we need from the filesystem, so nothing can go wrong now.
-	// defer s.Close()
-	// d, err := os.Create(dst)
-	// if err != nil {
-	// 	return err
-	// }
-	// if _, err := io.Copy(d, s); err != nil {
-	// 	d.Close()
-	// 	return err
-	// }
-	// return d.Close()
+func createBackup(fileName string) (err error) {
+	backupFileName := fileName + BackupFileExt
+	file, err := os.Open(fileName)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	backupFile, err := os.Create(backupFileName)
+	if err != nil {
+		return
+	}
+	defer func() {
+		err = backupFile.Close()
+	}()
+
+	_, err = io.Copy(backupFile, file)
+	return
 }
