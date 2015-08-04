@@ -32,39 +32,39 @@ func GenerateMethods(classFile *parser.ObjCClassFile) error {
 	for i := len(classFile.Classes) - 1; i >= 0; i-- {
 		class := classFile.Classes[i]
 
-		methodsInfo := getMethodsInfoSortedBackwards(class)
+		methodsInfo := getMethodsInfoSortedBackwards(&class)
 
-		fmt.Println(methodsInfo)
-		// fmt.Println(string(fileBytes[class.NSCodingInfo.InitWithCoder.PosStart:class.NSCodingInfo.InitWithCoder.PosEnd]))
-		// fmt.Println(string(fileBytes[class.NSCodingInfo.EncodeWithCoder.PosStart:class.NSCodingInfo.EncodeWithCoder.PosEnd]))
-		// fmt.Println(string(fileBytes[class.NSCopyingInfo.CopyWithZone.PosStart:class.NSCopyingInfo.CopyWithZone.PosEnd]))
+		for _, methodInfo := range methodsInfo {
+			var methodBytes []byte
+			// TODO: Remove the need of this switch  by creating a struct with the method info and the
+			// methos bytes together
+			switch methodInfo {
+			case &class.NSCodingInfo.InitWithCoder:
+				fmt.Println("Hey: InitWithCoder")
+				methodBytes, err = getNSCodingInit(&class)
+				if err != nil {
+					log.Printf("Class: %v. Error when generating NSCoding.initWithCoder method: %v\n", class.Name, err)
+				}
+			case &class.NSCodingInfo.EncodeWithCoder:
+				fmt.Println("Hey: EncodeWithCoder")
+				methodBytes, err = getNSCodingEncode(&class)
+				if err != nil {
+					log.Printf("Class: %v. Error when generating NSCoding.encodeWithCoder method: %v\n", class.Name, err)
+				}
+			case &class.NSCopyingInfo.CopyWithZone:
+				fmt.Println("Hey: CopyWithZone")
+				methodBytes, err = getNSCopying(&class)
+				if err != nil {
+					log.Printf("Class: %v. Error when generating NSCopying.copyWithZone method: %v\n", class.Name, err)
+				}
+			}
 
-		//TODO: insert the methods bytes in the fileBytes slice in the corresponding location
-		//TODO: Write the fileBytes into the MFile
-
-		codingInitMethod, err := getNSCodingInit(&class)
-		if err == nil {
-			fileBytes = insertMethod(fileBytes, codingInitMethod, class.NSCodingInfo.InitWithCoder)
-			fmt.Println(string(fileBytes))
-			//writeMethod(codingInitMethod, class.NSCodingInfo.InitWithCoder, implFile)
-		} else {
-			log.Printf("Class: %v. Error when generating NSCoding.initWithCoder method: %v\n", class.Name, err)
+			fileBytes = insertMethod(fileBytes, methodBytes, *methodInfo)
 		}
-
-		// codingEncodeMethod, err := getNSCodingEncode(&class)
-		// if err == nil {
-		// 	fmt.Println("* NSCoding.encode:", string(codingEncodeMethod))
-		// } else {
-		// 	log.Printf("Class: %v. Error when generating NSCoding.encodeWithCoder method: %v\n", class.Name, err)
-		// }
-
-		// copyingMethod, err := getNSCopying(&class)
-		// if err == nil {
-		// 	fmt.Println("* NSCopying.copy:", string(copyingMethod))
-		// } else {
-		// 	log.Printf("Class: %v. Error when generating NSCopying.copyWithZone method: %v\n", class.Name, err)
-		// }
 	}
+
+	// TODO: write the file
+	fmt.Println(string(fileBytes))
 	return nil
 }
 
@@ -84,10 +84,6 @@ func getNSCodingEncode(class *parser.ObjCClass) ([]byte, error) {
 	var res bytes.Buffer
 	err := NSCodingEncodeTpl.Execute(&res, class)
 	return res.Bytes(), err
-}
-
-func writeMethod(methodText []byte, methodInfo parser.MethodInfo, writer io.Writer) {
-
 }
 
 func createBackup(fileName string) (err error) {
@@ -110,18 +106,17 @@ func createBackup(fileName string) (err error) {
 	return
 }
 
-func getMethodsInfoSortedBackwards(class parser.ObjCClass) []*parser.MethodInfo {
+func getMethodsInfoSortedBackwards(class *parser.ObjCClass) []*parser.MethodInfo {
 	methods := []*parser.MethodInfo{
 		&class.NSCodingInfo.InitWithCoder,
 		&class.NSCodingInfo.EncodeWithCoder,
 		&class.NSCopyingInfo.CopyWithZone,
 	}
-	sort.Sort(MethodsInfoByPosStart(methods))
+	sort.Sort(sort.Reverse(MethodsInfoByPosStart(methods)))
 	return methods
 }
 
 func insertMethod(fileBytes, newMethod []byte, oldMethodInfo parser.MethodInfo) []byte {
-	fmt.Println(oldMethodInfo)
 	newMethodAndNextBytes := append(newMethod, fileBytes[oldMethodInfo.PosEnd:]...)
 	return append(fileBytes[:oldMethodInfo.PosStart], newMethodAndNextBytes...)
 }
