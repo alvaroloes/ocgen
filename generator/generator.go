@@ -14,8 +14,6 @@ import (
 
 var BackupFileExt = ".backup"
 
-type templateGenerator func(*parser.ObjCClass) ([]byte, error)
-
 func GenerateMethods(classFile *parser.ObjCClassFile) error {
 	if err := createBackup(classFile.MName); err != nil {
 		log.Printf("Unable to create a backup file. Error: %v", err)
@@ -37,31 +35,13 @@ func GenerateMethods(classFile *parser.ObjCClassFile) error {
 		methodGenerators, sortedMethodsInfo := getMethodsGenerators(&class)
 
 		for _, methodInfo := range sortedMethodsInfo {
-			methodBytes, _ := methodGenerators[methodInfo](&class)
-			// TODO: Remove the need of this switch  by creating a struct with the method info and the
-			// methos bytes together
-			// switch methodInfo {
-			// case &class.NSCodingInfo.InitWithCoder:
-			// 	fmt.Println("Hey: InitWithCoder")
-			// 	methodBytes, err = getNSCodingInit(&class)
-			// 	if err != nil {
-			// 		log.Printf("Class: %v. Error when generating NSCoding.initWithCoder method: %v\n", class.Name, err)
-			// 	}
-			// case &class.NSCodingInfo.EncodeWithCoder:
-			// 	fmt.Println("Hey: EncodeWithCoder")
-			// 	methodBytes, err = getNSCodingEncode(&class)
-			// 	if err != nil {
-			// 		log.Printf("Class: %v. Error when generating NSCoding.encodeWithCoder method: %v\n", class.Name, err)
-			// 	}
-			// case &class.NSCopyingInfo.CopyWithZone:
-			// 	fmt.Println("Hey: CopyWithZone")
-			// 	methodBytes, err = getNSCopying(&class)
-			// 	if err != nil {
-			// 		log.Printf("Class: %v. Error when generating NSCopying.copyWithZone method: %v\n", class.Name, err)
-			// 	}
-			// }
+			methodBytes, err := methodGenerators[methodInfo](&class)
 
-			fileBytes = insertMethod(fileBytes, methodBytes, *methodInfo)
+			if err == nil {
+				fileBytes = insertMethod(fileBytes, methodBytes, *methodInfo)
+			} else {
+				log.Printf(`Class: %v. Error when generating "%v" method: %v\n`, class.Name, methodInfo.Name, err)
+			}
 		}
 	}
 
@@ -107,6 +87,8 @@ func createBackup(fileName string) (err error) {
 	_, err = io.Copy(backupFile, file)
 	return
 }
+
+type templateGenerator func(*parser.ObjCClass) ([]byte, error)
 
 // Returns a map whose keys are pointers to all the structs "MethodInfo" present in "class" and the values are
 // the "templateGenerator" for each MethodInfo.

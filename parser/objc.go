@@ -10,10 +10,16 @@ var (
 	endRegexp      = regexp.MustCompile(`\s?@end`)
 	propertyRegexp = regexp.MustCompile(`@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
 )
+
 var (
-	codingInitMethodRegexp   = regexp.MustCompile(`\s?-.*initWithCoder:`)
-	codingEncodeMedhotRegexp = regexp.MustCompile(`\s?-.*encodeWithCoder:`)
-	copyingMethodRexexp      = regexp.MustCompile(`\s?-.*copyWithZone:`)
+	codingInitMethodName   = "initWithCoder:"
+	codingInitMethodRegexp = regexp.MustCompile(`\s?-.*` + codingInitMethodName)
+
+	codingEncodeMethodName   = "encodeWithCoder:"
+	codingEncodeMedhotRegexp = regexp.MustCompile(`\s?-.*` + codingEncodeMethodName)
+
+	copyingMethodName   = "copyWithZone:"
+	copyingMethodRexexp = regexp.MustCompile(`\s?-.*` + copyingMethodName)
 )
 
 const (
@@ -46,6 +52,7 @@ type ObjCClass struct {
 }
 
 type MethodInfo struct {
+	Name             string
 	PosStart, PosEnd int
 }
 
@@ -67,9 +74,9 @@ func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes 
 		ConformsNSCopying: true,
 	}
 
-	class.NSCodingInfo.InitWithCoder = extractMethodInfo(className, codingInitMethodRegexp, implBytes, implBytesOffset)
-	class.NSCodingInfo.EncodeWithCoder = extractMethodInfo(className, codingEncodeMedhotRegexp, implBytes, implBytesOffset)
-	class.NSCopyingInfo.CopyWithZone = extractMethodInfo(className, copyingMethodRexexp, implBytes, implBytesOffset)
+	class.NSCodingInfo.InitWithCoder = extractMethodInfo(codingInitMethodName, className, codingInitMethodRegexp, implBytes, implBytesOffset)
+	class.NSCodingInfo.EncodeWithCoder = extractMethodInfo(codingEncodeMethodName, className, codingEncodeMedhotRegexp, implBytes, implBytesOffset)
+	class.NSCopyingInfo.CopyWithZone = extractMethodInfo(copyingMethodName, className, copyingMethodRexexp, implBytes, implBytesOffset)
 	return class
 }
 
@@ -106,7 +113,7 @@ func mergeProperties(propertiesFromH, propertiesFromM []Property) []Property {
 	return propertiesFromH
 }
 
-func extractMethodInfo(className string, methodSignatureRegexp *regexp.Regexp, implBytes []byte, implBytesOffset int) (methodInfo MethodInfo) {
+func extractMethodInfo(methodName, className string, methodSignatureRegexp *regexp.Regexp, implBytes []byte, implBytesOffset int) (methodInfo MethodInfo) {
 	matchedMethod := methodSignatureRegexp.FindIndex(implBytes)
 
 	if matchedMethod == nil {
@@ -121,9 +128,7 @@ func extractMethodInfo(className string, methodSignatureRegexp *regexp.Regexp, i
 		methodInfo.PosEnd = bodyStart + relativeBodyEnd
 	}
 
-	//fmt.Println(methodInfo)
-	//fmt.Println(string(implBytes[methodInfo.PosStart:methodInfo.PosEnd]))
-
+	methodInfo.Name = methodName
 	methodInfo.PosStart += implBytesOffset
 	methodInfo.PosEnd += implBytesOffset
 
