@@ -14,6 +14,8 @@ import (
 
 var BackupFileExt = ".backup"
 
+type templateGenerator func(*parser.ObjCClass) ([]byte, error)
+
 func GenerateMethods(classFile *parser.ObjCClassFile) error {
 	if err := createBackup(classFile.MName); err != nil {
 		log.Printf("Unable to create a backup file. Error: %v", err)
@@ -32,32 +34,32 @@ func GenerateMethods(classFile *parser.ObjCClassFile) error {
 	for i := len(classFile.Classes) - 1; i >= 0; i-- {
 		class := classFile.Classes[i]
 
-		methodsInfo := getMethodsInfoSortedBackwards(&class)
+		methodGenerators, sortedMethodsInfo := getMethodsGenerators(&class)
 
-		for _, methodInfo := range methodsInfo {
-			var methodBytes []byte
+		for _, methodInfo := range sortedMethodsInfo {
+			methodBytes, _ := methodGenerators[methodInfo](&class)
 			// TODO: Remove the need of this switch  by creating a struct with the method info and the
 			// methos bytes together
-			switch methodInfo {
-			case &class.NSCodingInfo.InitWithCoder:
-				fmt.Println("Hey: InitWithCoder")
-				methodBytes, err = getNSCodingInit(&class)
-				if err != nil {
-					log.Printf("Class: %v. Error when generating NSCoding.initWithCoder method: %v\n", class.Name, err)
-				}
-			case &class.NSCodingInfo.EncodeWithCoder:
-				fmt.Println("Hey: EncodeWithCoder")
-				methodBytes, err = getNSCodingEncode(&class)
-				if err != nil {
-					log.Printf("Class: %v. Error when generating NSCoding.encodeWithCoder method: %v\n", class.Name, err)
-				}
-			case &class.NSCopyingInfo.CopyWithZone:
-				fmt.Println("Hey: CopyWithZone")
-				methodBytes, err = getNSCopying(&class)
-				if err != nil {
-					log.Printf("Class: %v. Error when generating NSCopying.copyWithZone method: %v\n", class.Name, err)
-				}
-			}
+			// switch methodInfo {
+			// case &class.NSCodingInfo.InitWithCoder:
+			// 	fmt.Println("Hey: InitWithCoder")
+			// 	methodBytes, err = getNSCodingInit(&class)
+			// 	if err != nil {
+			// 		log.Printf("Class: %v. Error when generating NSCoding.initWithCoder method: %v\n", class.Name, err)
+			// 	}
+			// case &class.NSCodingInfo.EncodeWithCoder:
+			// 	fmt.Println("Hey: EncodeWithCoder")
+			// 	methodBytes, err = getNSCodingEncode(&class)
+			// 	if err != nil {
+			// 		log.Printf("Class: %v. Error when generating NSCoding.encodeWithCoder method: %v\n", class.Name, err)
+			// 	}
+			// case &class.NSCopyingInfo.CopyWithZone:
+			// 	fmt.Println("Hey: CopyWithZone")
+			// 	methodBytes, err = getNSCopying(&class)
+			// 	if err != nil {
+			// 		log.Printf("Class: %v. Error when generating NSCopying.copyWithZone method: %v\n", class.Name, err)
+			// 	}
+			// }
 
 			fileBytes = insertMethod(fileBytes, methodBytes, *methodInfo)
 		}
@@ -106,14 +108,23 @@ func createBackup(fileName string) (err error) {
 	return
 }
 
-func getMethodsInfoSortedBackwards(class *parser.ObjCClass) []*parser.MethodInfo {
-	methods := []*parser.MethodInfo{
-		&class.NSCodingInfo.InitWithCoder,
-		&class.NSCodingInfo.EncodeWithCoder,
-		&class.NSCopyingInfo.CopyWithZone,
+// Returns a map whose keys are pointers to all the structs "MethodInfo" present in "class" and the values are
+// the "templateGenerator" for each MethodInfo.
+// The second return value contains a slice with the map keys sorted backwards as defined by "MethodsInfoByPosStart"
+func getMethodsGenerators(class *parser.ObjCClass) (map[*parser.MethodInfo]templateGenerator, []*parser.MethodInfo) {
+	generatorByMethod := map[*parser.MethodInfo]templateGenerator{
+		&class.NSCodingInfo.InitWithCoder:   getNSCodingInit,
+		&class.NSCodingInfo.EncodeWithCoder: getNSCodingEncode,
+		&class.NSCopyingInfo.CopyWithZone:   getNSCopying,
 	}
+
+	methods := make([]*parser.MethodInfo, 0, len(generatorByMethod))
+	for method := range generatorByMethod {
+		methods = append(methods, method)
+	}
+
 	sort.Sort(sort.Reverse(MethodsInfoByPosStart(methods)))
-	return methods
+	return generatorByMethod, methods
 }
 
 func insertMethod(fileBytes, newMethod []byte, oldMethodInfo parser.MethodInfo) []byte {
