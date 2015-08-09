@@ -1,22 +1,19 @@
-# ocgen
+# OCGen
 This is an Objective C boilerplate code generator. It has been developed by demand.
-Right now only generates the methods needed to conform the `NSCopying` and `NSCoding` protocols and 
-it only takes care of properties declared in the class interface.
+Right now only generates the methods needed to conform the `NSCopying` and `NSCoding` protocols.
+It is under heavy development and in an unfinished state. You can use the previous version (a different approach) in the branch `initial_approach`
 
-## How to use
-If you don't have Go installed on your system, you can grab directly the executable (inside `bin` folder) for
-your working platform. These are the supported platforms:
+## TODO
+### High priority
+* Finish main function, defining the supported flags
+* Call the super in the generated methods if it responds to the method selector
+* Restore the backed file if there was an error in the write operation inside the `GenerateMethods`
+* Decide how to copy items based on property attributes (and type?)
+* How to handle classes that conforms to the protocols indirectly through another protocol?
 
-* [Mac OSX 64bits](bin/osx_64/ocgen?raw=true)
-* [Linux 64bits](bin/linux_64/ocgen?raw=true)
+### Medium priority
+* Add concurrency
+* Allow to specify a directory to store the backups
 
-If you have a distribution of Go installed, you can "go get" it directly
-
-    go get github.com/alvaroloes/ocgen
-    
-## How it works
-Just call it with the name of your `.h` class file as parameter.
-
-    ocgen /path/to/class.h
-    
-It will output the code needed to conform the protocols. Just copy and paste it into you `.m` class file
+### Lower priority
+* Allow installing through Alcatraz

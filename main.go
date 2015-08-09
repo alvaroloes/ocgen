@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/alvaroloes/ocgen/generator"
 	"github.com/alvaroloes/ocgen/parser"
@@ -12,8 +13,15 @@ func main() {
 	fileNames := parser.GetParseableFiles("./fixtures")
 	fmt.Println(fileNames)
 
-	classFile, _ := parser.Parse(fileNames[0])
-	generator.GenerateMethods(classFile)
+	classFile, err := parser.Parse(fileNames[0])
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = generator.GenerateMethods(classFile)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	// Parse each file
 	// for _, fileName := range fileNames {

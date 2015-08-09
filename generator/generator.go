@@ -2,7 +2,6 @@ package generator
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -45,9 +44,9 @@ func GenerateMethods(classFile *parser.ObjCClassFile) error {
 		}
 	}
 
-	// TODO: write the file
-	fmt.Println(string(fileBytes))
-	return nil
+	// Write the file with the new content
+	// (Permissions will be ignored as the file already exists)
+	return ioutil.WriteFile(classFile.MName, fileBytes, 0664)
 }
 
 func getNSCopying(class *parser.ObjCClass) ([]byte, error) {
