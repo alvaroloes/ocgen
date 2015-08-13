@@ -1,6 +1,6 @@
 # OCGen
 This is an Objective C boilerplate code generator. It has been developed by demand.
-Right now only generates the methods needed to conform the `NSCopying` and `NSCoding` protocols.
+Right now it only generates the methods needed to conform the `NSCopying` and `NSCoding` protocols.
 It's in an early state and there are still many things to add, as you can see in the TODO section.
 
 Any pull request will be highly appreciated.
@@ -11,9 +11,9 @@ Any pull request will be highly appreciated.
   		-backup=true: Whether to create a backup of all files before modifying them
   		-backupDir="./.ocgen": The directory where the backups will be placed if 'backup=true'
 
-It will generate the methods to conform the `NSCopying` and `NSCoding` protocols for the classes under each directory. Only the classes tagged with "OCGEN_AUTO" will be considered. Right now all properties are taken into account for each generated method
+It will generate the methods to conform the `NSCopying` and `NSCoding` protocols for the classes under each pased directory. Only the classes tagged with "OCGEN_AUTO" will be considered. Right now all properties are taken into account for each generated method
 
-## How to tag a class with OCGEN_AUTO?
+## How to tag a class?
 You first need to create an empty macro:
 
 	#define OCGEN_AUTO
@@ -38,6 +38,6 @@ Then you need to use that macro to tag the class interface, putting it at the en
 * Add concurrency
 * Allow to specify a directory to store the backups
 
-### Lower priority
+### Low priority
 * Allow installing through Alcatraz
 * Provide a header file with the macros used for tagging
