@@ -1,57 +1,63 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/alvaroloes/ocgen/generator"
 	"github.com/alvaroloes/ocgen/parser"
 )
 
+var params struct {
+	backup    bool
+	backupDir string
+}
+
 func main() {
+	// Tune a little the "usage" message
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] directory1 [directory2,...]\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+	flag.BoolVar(&params.backup, "backup", true, "Whether to create a backup of all files before modifying them")
+	flag.StringVar(&params.backupDir, "backupDir", "./.ocgen", "The directory where the backups will be placed if 'backup=true'")
+	flag.Parse()
+
+	if flag.NArg() == 0 {
+		fmt.Fprintln(os.Stderr, "At least one directory must be specified")
+		flag.Usage()
+		return
+	}
+
+	var backupDir string
+	if params.backup {
+		backupDir = params.backupDir
+	}
+
+	for _, dir := range flag.Args() {
+		processDirectory(dir, backupDir)
+	}
+}
+
+func processDirectory(dir, backupDir string) {
 	// Get all the header files under the directory
-	fileNames := parser.GetParseableFiles("./fixtures")
+	fileNames := parser.GetParseableFiles(dir)
 	fmt.Println(fileNames)
 
-	classFile, err := parser.Parse(fileNames[0])
-	if err != nil {
-		log.Fatalln(err)
+	for _, fileName := range fileNames {
+		classFile, err := parser.Parse(fileName)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			continue
+		}
+
+		//Stop here if no classes where found
+		if len(classFile.Classes) > 0 {
+			err = generator.GenerateMethods(classFile, backupDir)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+			}
+		}
 	}
-
-	err = generator.GenerateMethods(classFile)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// Parse each file
-	// for _, fileName := range fileNames {
-	// 	parser.ParseAndGetClassesInfo(fileName, "asdf")
-	// }
-
-	//TODO: In the future, this will have some flags
-	// flag.Parse()
-	// filenames := flag.Args()
-
-	// if len(filenames) == 0 {
-	// 	log.Fatal(errors.New("No input files have been specified"))
-	// }
-
-	// for _, filename := range filenames {
-	// 	classInfo, err := parser.ParseFile(filename)
-	// 	if err != nil {
-	// 		log.Printf("Error processing file %v: %v", filename, err)
-	// 	}
-
-	// 	nsCopyingCode, err := generator.NSCopying(classInfo)
-	// 	if err != nil {
-	// 		log.Printf("Error generating NSCopying code: %v", err)
-	// 	}
-	// 	fmt.Println(nsCopyingCode)
-
-	// 	nsCodingCode, err := generator.NSCoding(classInfo)
-	// 	if err != nil {
-	// 		log.Printf("Error generating NSCoding code: %v", err)
-	// 	}
-	// 	fmt.Println(nsCodingCode)
-	// }
 }

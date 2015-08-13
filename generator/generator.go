@@ -2,26 +2,27 @@ package generator
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
+	"path"
 	"sort"
 
 	"github.com/alvaroloes/ocgen/parser"
 )
 
-var BackupFileExt = ".backup"
-
-func GenerateMethods(classFile *parser.ObjCClassFile) error {
-	if err := createBackup(classFile.MName); err != nil {
-		log.Printf("Unable to create a backup file. Error: %v", err)
-		return err
+func GenerateMethods(classFile *parser.ObjCClassFile, backupDir string) error {
+	if backupDir != "" {
+		if err := createBackup(classFile.MName, backupDir); err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to create a backup file. Error: %v\n", err)
+			return err
+		}
 	}
 
 	fileBytes, err := ioutil.ReadFile(classFile.MName)
 	if err != nil {
-		log.Printf("Unable to open implementation file: %v", classFile.MName)
+		fmt.Fprintf(os.Stderr, "Unable to open implementation file: %v", classFile.MName)
 		return err
 	}
 
@@ -39,7 +40,7 @@ func GenerateMethods(classFile *parser.ObjCClassFile) error {
 			if err == nil {
 				fileBytes = insertMethod(fileBytes, methodBytes, *methodInfo)
 			} else {
-				log.Printf(`Class: %v. Error when generating "%v" method: %v\n`, class.Name, methodInfo.Name, err)
+				fmt.Fprintf(os.Stderr, `Class: %v. Error when generating "%v" method: %v\n`, class.Name, methodInfo.Name, err)
 			}
 		}
 	}
@@ -67,13 +68,19 @@ func getNSCodingEncode(class *parser.ObjCClass) ([]byte, error) {
 	return res.Bytes(), err
 }
 
-func createBackup(fileName string) (err error) {
-	backupFileName := fileName + BackupFileExt
+func createBackup(fileName, backupDir string) (err error) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		return
 	}
 	defer file.Close()
+
+	backupFileName := path.Join(backupDir, fileName)
+
+	err = os.MkdirAll(path.Dir(backupFileName), 0775)
+	if err != nil {
+		return
+	}
 
 	backupFile, err := os.Create(backupFileName)
 	if err != nil {

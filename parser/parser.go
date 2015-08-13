@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,11 +10,11 @@ import (
 )
 
 const (
-	ocgenMarker   = "OCGEN_AUTO"
+	ocgenTag      = "OCGEN_AUTO"
 	headerFileExt = ".h"
 )
 
-var interfaceRegexp = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*).*?` + ocgenMarker + `.*?@end)`)
+var interfaceRegexp = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*).*?` + ocgenTag + `.*?@end)`)
 
 const interfaceRegexpNameIndex = 1
 
@@ -46,14 +47,14 @@ func GetParseableFiles(rootPath string) []string {
 func Parse(headerFileName string) (*ObjCClassFile, error) {
 	headerFileBytes, err := ioutil.ReadFile(headerFileName)
 	if err != nil {
-		log.Printf("Unable to open header file %v\n", err)
+		fmt.Fprintf(os.Stderr, "Unable to open header file %v\n", err)
 		return nil, err
 	}
 
 	implFileName := implFileNameFromHeader(headerFileName)
 	implFileBytes, err := ioutil.ReadFile(implFileName)
 	if err != nil {
-		log.Printf("Unable to open implementation file: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Unable to open implementation file: %v\n", err)
 		return nil, err
 	}
 
