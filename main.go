@@ -15,14 +15,7 @@ var params struct {
 }
 
 func main() {
-	// Tune a little the "usage" message
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] directory1 [directory2,...]\n", os.Args[0])
-		flag.PrintDefaults()
-	}
-	flag.BoolVar(&params.backup, "backup", true, "Whether to create a backup of all files before modifying them")
-	flag.StringVar(&params.backupDir, "backupDir", "./.ocgen", "The directory where the backups will be placed if 'backup=true'")
-	flag.Parse()
+	configureUsage();
 
 	if flag.NArg() == 0 {
 		fmt.Fprintln(os.Stderr, "At least one directory must be specified")
@@ -60,4 +53,15 @@ func processDirectory(dir, backupDir string) {
 			}
 		}
 	}
+}
+
+func configureUsage() {
+	// Tune a little the "usage" message
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] directory1 [directory2,...]\n", os.Args[0])
+		flag.PrintDefaults()
+	}
+	flag.BoolVar(&params.backup, "backup", true, "Whether to create a backup of all files before modifying them")
+	flag.StringVar(&params.backupDir, "backupDir", "./.ocgen", "The directory where the backups will be placed if 'backup=true'")
+	flag.Parse()
 }
