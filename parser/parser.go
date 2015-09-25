@@ -98,13 +98,3 @@ func getClasses(headerFileBytes, implFileBytes []byte) []ObjCClass {
 	}
 	return classesInfo
 }
-
-func implBytesForClassName(className string, matchedImplementations [][]int, implFileBytes []byte) []byte {
-	for _, matchedImpl := range matchedImplementations {
-		implName := string(implFileBytes[matchedImpl[2]:matchedImpl[3]])
-		if implName == className {
-			return implFileBytes[matchedImpl[0]:matchedImpl[1]]
-		}
-	}
-	return nil
-}
