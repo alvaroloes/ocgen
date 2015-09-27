@@ -29,7 +29,7 @@ Then you need to use that macro to tag the class interface, putting it at the en
 ### High priority
 * Restore the backed file if there was an error in the write operation inside the `GenerateMethods`
 * How to handle classes that conforms to the protocols indirectly through another protocol?
-* Merge properties from header and implementation file (taking care of readonly ones)
+* How to handle readonly properties? 
 * Add instruction about how to execute it in every compilation
 * Handle other types correctly (not only objects and integers)
 
