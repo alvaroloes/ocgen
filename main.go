@@ -36,7 +36,6 @@ func main() {
 func processDirectory(dir, backupDir string) {
 	// Get all the header files under the directory
 	fileNames := parser.GetParseableFiles(dir)
-	fmt.Println(fileNames)
 
 	for _, fileName := range fileNames {
 		classFile, err := parser.Parse(fileName)

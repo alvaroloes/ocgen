@@ -66,7 +66,11 @@ var NSCodingEncodeText = `
         [super encodeWithCoder:coder];
     }{{range .Properties}}
     {{if .IsPointer -}}
-        [coder encodeObject:_{{.Name}} forKey:@"{{.Name}}"];
+        {{if .IsWeak -}}
+            [coder encodeConditionalObject:_{{.Name}} forKey:@"{{.Name}}"];
+        {{- else -}}
+            [coder encodeObject:_{{.Name}} forKey:@"{{.Name}}"];
+        {{- end}}
     {{- else -}}
         [coder encodeInteger:_{{.Name}} forKey:@"{{.Name}}"];
     {{- end}}

@@ -56,12 +56,6 @@ type MethodInfo struct {
 	PosStart, PosEnd int
 }
 
-type Property struct {
-	Name, Class string
-	Attributes  []string
-	IsPointer   bool
-}
-
 func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes []byte, implBytesOffset int) ObjCClass {
 	propertiesFromH := extractProperties(hInterfaceBytes)
 	propertiesFromM := extractProperties(mInterfaceBytes)

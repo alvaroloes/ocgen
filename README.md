@@ -27,12 +27,11 @@ Then you need to use that macro to tag the class interface, putting it at the en
 
 ## TODO
 ### High priority
-* Call the super in the generated methods if it responds to the method selector
 * Restore the backed file if there was an error in the write operation inside the `GenerateMethods`
-* Decide how to copy items based on property attributes (and type?)
 * How to handle classes that conforms to the protocols indirectly through another protocol?
 * Merge properties from header and implementation file (taking care of readonly ones)
 * Add instruction about how to execute it in every compilation
+* Handle other types correctly (not only objects and integers)
 
 ### Medium priority
 * Add concurrency
