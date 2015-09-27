@@ -101,9 +101,22 @@ func extractProperties(interfaceBytes []byte) []Property {
 }
 
 func mergeProperties(propertiesFromH, propertiesFromM []Property) []Property {
-	// TODO:
-	// - Join both slices
-	// - Remove the readonly properties that has a corresponding readwrite version in M
+	// Join the two property slices avoiding duplicates (for example a property in .h with
+	// a "readonly" attribute and the same property in .m with "readwrite")
+	// Properties in .m have preference.
+
+	hPropsMap := make(map[string]int, len(propertiesFromH))
+	for i,prop := range propertiesFromH {
+		hPropsMap[prop.Name] = i // Save the index of the property in case we find a duplicate later
+	}
+
+	for _,prop := range propertiesFromM {
+		if index,exists := hPropsMap[prop.Name]; exists {
+			propertiesFromH[index] = prop;
+		} else {
+			propertiesFromH = append(propertiesFromH,prop)
+		}
+	}
 	return propertiesFromH
 }
 
