@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ocgenTag      = "OCGEN_AUTO"
+	ocgenTag      = "OCGEN"
 	headerFileExt = ".h"
 )
 

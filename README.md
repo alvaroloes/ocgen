@@ -11,16 +11,16 @@ Any pull request will be highly appreciated.
   		-backup=true: Whether to create a backup of all files before modifying them
   		-backupDir="./.ocgen": The directory where the backups will be placed if 'backup=true'
 
-It will generate the methods to conform the `NSCopying` and `NSCoding` protocols for the classes under each pased directory. Only the classes tagged with "OCGEN_AUTO" will be considered. Right now all properties are taken into account for each generated method
+It will generate the methods to conform the `NSCopying` and `NSCoding` protocols for the classes under each pased directory. Only the classes tagged with "OCGEN" will be considered. Right now all properties are taken into account for each generated method
 
 ## How to tag a class?
 You first need to create an empty macro:
 
-	#define OCGEN_AUTO
+	#define OCGEN
 
 Then you need to use that macro to tag the class interface, putting it at the end of the `@interface` line:
 
-	@interface MyClass : NSObject <NSCopying, NSCoding> OCGEN_AUTO
+	@interface MyClass : NSObject <NSCopying, NSCoding> OCGEN
 		(...)
 	@end
 
