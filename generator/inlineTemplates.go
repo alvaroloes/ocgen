@@ -17,15 +17,17 @@ var NSCopyingText = `
     }
     if (copy != nil)
     { {{range .Properties}}
-        {{if .IsPointer -}}
-            {{if eq .Class "NSArray" -}}
-                copy.{{.Name}} = [[NSArray alloc] initWithArray:self.{{.Name}} copyItems:YES];
-            {{- else -}}
-                copy.{{.Name}} = [self.{{.Name}} copyWithZone:zone];
-            {{- end}}
-        {{- else -}}
-            copy.{{.Name}} = self.{{.Name}};
-        {{- end}}
+        copy{{.Accessor}}{{.Name}} = {{if .IsObject -}}
+                                          {{if eq .Class "NSArray" -}}
+                                              [[NSArray alloc] initWithArray:self{{.Accessor}}{{.Name}} copyItems:YES];
+                                          {{- else if .IsWeak -}}
+                                              self{{.Accessor}}{{.Name}};
+                                          {{- else -}}
+                                              [self{{.Accessor}}{{.Name}} copyWithZone:zone];
+                                          {{- end}}
+                                      {{- else -}}
+                                          self{{.Accessor}}{{.Name}};
+                                      {{- end}}
     {{- end}}
     }
     return copy;
@@ -46,7 +48,7 @@ var NSCodingInitText = `
     }
     if(self != nil)
     { {{range .Properties}}
-        {{if .IsPointer -}}
+        {{if .IsObject -}}
             _{{.Name}} = [decoder decodeObjectForKey:@"{{.Name}}"];
         {{- else -}}
             _{{.Name}} = [decoder decodeIntegerForKey:@"{{.Name}}"];
@@ -65,7 +67,7 @@ var NSCodingEncodeText = `
     {
         [super encodeWithCoder:coder];
     }{{range .Properties}}
-    {{if .IsPointer -}}
+    {{if .IsObject -}}
         {{if .IsWeak -}}
             [coder encodeConditionalObject:_{{.Name}} forKey:@"{{.Name}}"];
         {{- else -}}
