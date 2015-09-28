@@ -4,11 +4,13 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"fmt"
 )
 
 var (
 	endRegexp      = regexp.MustCompile(`\s?@end`)
-	propertyRegexp = regexp.MustCompile(`@property\s?(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
+	propertyRegexp = regexp.MustCompile(`@property\s*(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
+	parentAndProtocolsRegexp = regexp.MustCompile(`@interface[^:]*(?::\s*([^<\s]*))?(?:\s*<([^>]*)>)?`)
 )
 
 var (
@@ -29,6 +31,11 @@ const (
 	propertyRegexpNameIndex
 )
 
+const (
+	parentAndProtocolsRegexpParentIndex = iota + 1
+	parentAndProtocolsRegexpProtocolsIndex
+)
+
 type ObjCClassFile struct {
 	HName, MName string
 	Classes      []ObjCClass
@@ -37,6 +44,8 @@ type ObjCClassFile struct {
 type ObjCClass struct {
 	// These fields are extracted from the header file
 	Name              string
+	Parent            string
+	Protocols         []string
 	Properties        []Property // These are also extracted form the implementation file
 	ConformsNSCoding  bool
 	ConformsNSCopying bool
@@ -59,9 +68,12 @@ type MethodInfo struct {
 func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes []byte, implBytesOffset int) ObjCClass {
 	propertiesFromH := extractProperties(hInterfaceBytes)
 	propertiesFromM := extractProperties(mInterfaceBytes)
+	parent, protocols := extractParentAndProtocols(hInterfaceBytes)
 
 	class := ObjCClass{
 		Name:       className,
+		Parent:     parent,
+		Protocols:  protocols,
 		Properties: mergeProperties(propertiesFromH, propertiesFromM),
 		//TODO: Detect if the class conforms the protocols taking into account the parent protocols too
 		ConformsNSCoding:  true,
@@ -98,6 +110,16 @@ func extractProperties(interfaceBytes []byte) []Property {
 	}
 
 	return properties
+}
+
+func extractParentAndProtocols(interfaceBytes []byte) (parent string, protocols []string) {
+	match := parentAndProtocolsRegexp.FindSubmatch(interfaceBytes)
+	parent = string(match[parentAndProtocolsRegexpParentIndex])
+	protocols = strings.Split(string(match[parentAndProtocolsRegexpProtocolsIndex]), ",")
+	for i, proto := range protocols {
+		protocols[i] = strings.TrimSpace(proto)
+	}
+	return
 }
 
 func mergeProperties(propertiesFromH, propertiesFromM []Property) []Property {
