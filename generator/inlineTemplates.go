@@ -48,11 +48,11 @@ var NSCodingInitText = `
     }
     if(self != nil)
     { {{range .Properties}}
-        {{if .IsObject -}}
-            _{{.Name}} = [decoder decodeObjectForKey:@"{{.Name}}"];
-        {{- else -}}
-            _{{.Name}} = [decoder decodeIntegerForKey:@"{{.Name}}"];
-        {{- end}}
+        _{{.Name}} = {{if .IsObject -}}
+                         [decoder decodeObjectForKey:@"{{.Name}}"];
+                     {{- else -}}
+                         [decoder decode{{.CoderType}}ForKey:@"{{.Name}}"];
+                     {{- end}}
     {{- end}}
     }
     return self;
@@ -74,7 +74,7 @@ var NSCodingEncodeText = `
             [coder encodeObject:_{{.Name}} forKey:@"{{.Name}}"];
         {{- end}}
     {{- else -}}
-        [coder encodeInteger:_{{.Name}} forKey:@"{{.Name}}"];
+        [coder encode{{.CoderType}}:_{{.Name}} forKey:@"{{.Name}}"];
     {{- end}}
 {{- end}}
 }`
