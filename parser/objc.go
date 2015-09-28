@@ -10,7 +10,7 @@ import (
 var (
 	endRegexp      = regexp.MustCompile(`\s?@end`)
 	propertyRegexp = regexp.MustCompile(`@property\s*(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
-	parentAndProtocolsRegexp = regexp.MustCompile(`@interface[^:]*(?::\s*([^<\s]*))?(?:\s*<([^>]*)>)?`)
+	parentAndProtocolsRegexp = regexp.MustCompile(`@interface[^:<]*(?::\s*([^<\s]*))?(?:\s*<([^>]*)>)?`)
 )
 
 var (
@@ -69,6 +69,8 @@ func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes 
 	propertiesFromH := extractProperties(hInterfaceBytes)
 	propertiesFromM := extractProperties(mInterfaceBytes)
 	parent, protocols := extractParentAndProtocols(hInterfaceBytes)
+
+	fmt.Println(parent, protocols)
 
 	class := ObjCClass{
 		Name:       className,
