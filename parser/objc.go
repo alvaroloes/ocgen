@@ -4,7 +4,6 @@ import (
 	"log"
 	"regexp"
 	"strings"
-	"fmt"
 )
 
 var (
@@ -36,6 +35,10 @@ const (
 	parentAndProtocolsRegexpProtocolsIndex
 )
 
+const (
+	nsObjectToken = "NSObject"
+)
+
 type ObjCClassFile struct {
 	HName, MName string
 	Classes      []ObjCClass
@@ -60,6 +63,10 @@ type ObjCClass struct {
 	}
 }
 
+func (oc *ObjCClass) IsDirectChildOfNSObject() bool {
+	return oc.Parent == nsObjectToken
+}
+
 type MethodInfo struct {
 	Name             string
 	PosStart, PosEnd int
@@ -69,8 +76,6 @@ func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes 
 	propertiesFromH := extractProperties(hInterfaceBytes)
 	propertiesFromM := extractProperties(mInterfaceBytes)
 	parent, protocols := extractParentAndProtocols(hInterfaceBytes)
-
-	fmt.Println(parent, protocols)
 
 	class := ObjCClass{
 		Name:       className,
@@ -87,6 +92,7 @@ func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes 
 	class.NSCopyingInfo.CopyWithZone = extractMethodInfo(copyingMethodName, className, copyingMethodRexexp, implBytes, implBytesOffset)
 	return class
 }
+
 
 func extractProperties(interfaceBytes []byte) []Property {
 	var properties []Property
