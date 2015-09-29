@@ -32,6 +32,7 @@ Then you need to use that macro to tag the class interface, putting it at the en
 * Restore the backed file if there was an error in the write operation inside the `GenerateMethods`
 
 ### Medium priority
+* Provide the ability to handle all classes **except** those with OCGEN_IGNORE
 * Add concurrency
 * Allow to specify a directory to store the backups
 
