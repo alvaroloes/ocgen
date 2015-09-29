@@ -29,9 +29,8 @@ func GenerateMethods(classFile *parser.ObjCClassFile, backupDir string) error {
 	// Classes and their method infos are sorted by appearance. We need to traverse them backwards
 	// to keep the fields PosStart and PosEnd of the MethodInfo's in sync with the fileBytes when
 	// inserting the new methods
-	for i := len(classFile.Classes) - 1; i >= 0; i-- {
-		class := classFile.Classes[i]
-
+	sort.Sort(sort.Reverse(ClassesByAppearanceInMFile(classFile.Classes)))
+	for _,class := range classFile.Classes {
 		methodGenerators, sortedMethodsInfo := getMethodsGenerators(&class)
 
 		for _, methodInfo := range sortedMethodsInfo {
