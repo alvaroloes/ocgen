@@ -8,7 +8,7 @@ import (
 
 var (
 	endRegexp      = regexp.MustCompile(`\s?@end`)
-	propertyRegexp = regexp.MustCompile(`@property\s*(?:\((.*)\))?\s?([^\s\*]*)\s?(\*)?(.*);`)
+	propertyRegexp = regexp.MustCompile(`@property\s*(?:\((.*)\))?\s*([^\s\*]*)\s*(\*)?\s*(.*);`)
 	parentAndProtocolsRegexp = regexp.MustCompile(`@interface[^:<]*(?::\s*([^<\s]*))?(?:\s*<([^>]*)>)?`)
 )
 
