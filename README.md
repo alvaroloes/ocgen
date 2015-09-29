@@ -27,9 +27,9 @@ Then you need to use that macro to tag the class interface, putting it at the en
 
 ## TODO
 ### High priority
-* Restore the backed file if there was an error in the write operation inside the `GenerateMethods`
 * How to handle classes that conforms to the protocols indirectly through another protocol?
 * Add instruction about how to execute it in every compilation
+* Restore the backed file if there was an error in the write operation inside the `GenerateMethods`
 
 ### Medium priority
 * Add concurrency

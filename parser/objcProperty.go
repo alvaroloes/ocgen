@@ -8,8 +8,8 @@ const (
 	readonlyToken = "readonly"
 	idTypeToken = "id"
 
-	defaultAccessor = "."
-	readonlyAccessor = "->"
+	propertyAccessor = "."
+	ivarAccessor = "->_"
 
 	defaultCoderType = "Integer"
 )
@@ -60,12 +60,12 @@ func (p *Property) IsReadonly() bool {
 	return false
 }
 
-// Returns the accessor for this property (-> or .)
+// Returns either the property or the ivar accessor
 func (p *Property) Accessor() string {
 	if (p.IsReadonly()) {
-		return readonlyAccessor
+		return ivarAccessor
 	}
-	return defaultAccessor
+	return propertyAccessor
 }
 
 func (p *Property) CoderType() string {
