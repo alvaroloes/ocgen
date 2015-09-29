@@ -14,7 +14,7 @@ const (
 	headerFileExt = ".h"
 )
 
-var interfaceRegexp = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*).*?` + ocgenTag + `.*?@end)`)
+var interfaceRegexp = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*)[^\n]*?` + ocgenTag + `.*?@end)`)
 
 const interfaceRegexpNameIndex = 1
 
