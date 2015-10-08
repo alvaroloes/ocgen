@@ -7,18 +7,35 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 const (
-	ocgenTag      = "OCGEN"
-	headerFileExt = ".h"
+	defaultIncludeTag = ""
+	defaultExcludeTag = "OCGEN_IGNORE"
+	defaultHeaderFileExt = ".h"
 )
 
-var interfaceRegexp = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*)[^\n]*?` + ocgenTag + `.*?@end)`)
+type Parser struct {
+	IncludeTag, ExcludeTag, HeaderFileExt string
+}
 
-const interfaceRegexpNameIndex = 1
+func NewParser() Parser {
+	return Parser{
+		IncludeTag: defaultIncludeTag,
+		ExcludeTag: defaultExcludeTag,
+		HeaderFileExt: defaultHeaderFileExt,
+	}
+}
 
-func GetParseableFiles(rootPath string) []string {
+var interfaceRegexp = regexp.MustCompile(`(?ms:^\s?@interface\s+([^:<\s]*)(?:[^\n]*>|\s*)([^\n]*?)\n.*?@end)`)
+
+const (
+	interfaceRegexpNameIndex = iota + 1
+	interfaceRegexpTagIndex
+)
+
+func (p Parser) GetParseableFiles(rootPath string) []string {
 	var headerFiles []string
 
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
@@ -26,7 +43,7 @@ func GetParseableFiles(rootPath string) []string {
 			return err
 		}
 
-		isHeader, err := filepath.Match("*"+headerFileExt, info.Name())
+		isHeader, err := filepath.Match("*"+p.HeaderFileExt, info.Name())
 		if err != nil {
 			return err
 		}
@@ -44,46 +61,56 @@ func GetParseableFiles(rootPath string) []string {
 	return headerFiles
 }
 
-func Parse(headerFileName string) (*ObjCClassFile, error) {
+func (p Parser) Parse(headerFileName string) (*ObjCClassFile, error) {
+	fmt.Println("Processing file: " + headerFileName)
+
 	headerFileBytes, err := ioutil.ReadFile(headerFileName)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to open header file %v\n", err)
+		fmt.Fprintf(os.Stderr, "Ignoring file %v: %v\n", headerFileName, err)
 		return nil, err
 	}
 
-	implFileName := implFileNameFromHeader(headerFileName)
+	implFileName := p.implFileNameFromHeader(headerFileName)
 	implFileBytes, err := ioutil.ReadFile(implFileName)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to open implementation file: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Ignoring file %v: %v\n", headerFileName, err)
 		return nil, err
 	}
 
 	classFile := ObjCClassFile{
 		HName:   headerFileName,
 		MName:   implFileName,
-		Classes: getClasses(headerFileBytes, implFileBytes),
+		Classes: p.getClasses(headerFileBytes, implFileBytes),
 	}
 
 	return &classFile, nil
 }
 
-func implFileNameFromHeader(headerFileName string) string {
-	return headerFileName[:len(headerFileName)-len(headerFileExt)] + ".m"
+func (p Parser) implFileNameFromHeader(headerFileName string) string {
+	return headerFileName[:len(headerFileName)-len(p.HeaderFileExt)] + ".m"
 }
 
-func getClasses(headerFileBytes, implFileBytes []byte) []ObjCClass {
+func (p Parser) getClasses(headerFileBytes, implFileBytes []byte) []ObjCClass {
 	// Search for all the interfaces in the header file
 	matchedHInterfaces := interfaceRegexp.FindAllSubmatch(headerFileBytes, -1)
 	if matchedHInterfaces == nil {
 		return []ObjCClass{} // No interfaces in header file
 	}
 
-	classesInfo := make([]ObjCClass, len(matchedHInterfaces))
-	for i, matchedInterface := range matchedHInterfaces {
-		// Get the whole @interface bytes from header file
-		interfaceHBytes := matchedInterface[0]
+	var classesInfo []ObjCClass
+	for _, matchedInterface := range matchedHInterfaces {
 		// Get the class name to create the regexp for searching in the implementation file
 		className := string(matchedInterface[interfaceRegexpNameIndex])
+
+		// Check the tags to know if the class needs to be processed
+		tag := strings.TrimSpace(string(matchedInterface[interfaceRegexpTagIndex]))
+		if (p.mustExcludeClassWithTag(tag)) {
+			fmt.Fprintf(os.Stderr, "Ignoring class %v. Tag {%v} is either equal to parser.ExcludeTag (%v) or it isn't equal to parser.IncludeTag (%v)\n", className, tag, p.ExcludeTag, p.IncludeTag)
+			continue
+		}
+
+		// Get the whole @interface bytes from header file
+		interfaceHBytes := matchedInterface[0]
 
 		// Get the whole @interface bytes from the implementation file
 		classInterfaceRegexp := regexp.MustCompile(`(?ms:^\s?@interface\s+` + className + `\s+.*?@end)`)
@@ -94,7 +121,14 @@ func getClasses(headerFileBytes, implFileBytes []byte) []ObjCClass {
 		matchedImpl := implRegexp.FindIndex(implFileBytes)
 		implBytes := implFileBytes[matchedImpl[0]:matchedImpl[1]]
 
-		classesInfo[i] = NewObjCClass(className, interfaceHBytes, interfaceMBytes, implBytes, matchedImpl[0])
+		classesInfo = append(classesInfo, NewObjCClass(className, interfaceHBytes, interfaceMBytes, implBytes, matchedImpl[0]))
 	}
 	return classesInfo
+}
+
+func (p Parser) mustExcludeClassWithTag(tag string) bool {
+	if tag == p.ExcludeTag {
+		return true
+	}
+	return p.IncludeTag != "" && tag != p.IncludeTag
 }

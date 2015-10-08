@@ -28,12 +28,14 @@ func main() {
 		backupDir = params.backupDir
 	}
 
+	parser := parser.NewParser()
+
 	for _, dir := range flag.Args() {
-		processDirectory(dir, backupDir)
+		processDirectory(parser, dir, backupDir)
 	}
 }
 
-func processDirectory(dir, backupDir string) {
+func processDirectory(parser parser.Parser, dir, backupDir string) {
 	// Get all the header files under the directory
 	fileNames := parser.GetParseableFiles(dir)
 
