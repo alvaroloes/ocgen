@@ -14,10 +14,11 @@ const (
 	defaultIncludeTag = ""
 	defaultExcludeTag = "OCGEN_IGNORE"
 	defaultHeaderFileExt = ".h"
+	defaultImplFileExt = ".m"
 )
 
 type Parser struct {
-	IncludeTag, ExcludeTag, HeaderFileExt string
+	IncludeTag, ExcludeTag, HeaderFileExt, ImplFileExt string
 }
 
 func NewParser() Parser {
@@ -25,6 +26,7 @@ func NewParser() Parser {
 		IncludeTag: defaultIncludeTag,
 		ExcludeTag: defaultExcludeTag,
 		HeaderFileExt: defaultHeaderFileExt,
+		ImplFileExt: defaultImplFileExt,
 	}
 }
 
@@ -87,7 +89,7 @@ func (p Parser) Parse(headerFileName string) (*ObjCClassFile, error) {
 }
 
 func (p Parser) implFileNameFromHeader(headerFileName string) string {
-	return headerFileName[:len(headerFileName)-len(p.HeaderFileExt)] + ".m"
+	return headerFileName[:len(headerFileName)-len(p.HeaderFileExt)] + p.ImplFileExt
 }
 
 func (p Parser) getClasses(headerFileBytes, implFileBytes []byte) []ObjCClass {
