@@ -12,7 +12,7 @@ import (
 	"github.com/alvaroloes/ocgen/parser"
 )
 
-func GenerateMethods(classFile *parser.ObjCClassFile, backupDir string) error {
+func GenerateMethods(classFile *parser.ObjCClassFile, NSCodingProtocols, NSCopyingProtocols []string, backupDir string) error {
 	if backupDir != "" {
 		if err := createBackup(classFile.MName, backupDir); err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to create a backup file. Error: %v\n", err)
@@ -31,7 +31,7 @@ func GenerateMethods(classFile *parser.ObjCClassFile, backupDir string) error {
 	// inserting the new methods
 	sort.Sort(sort.Reverse(ClassesByAppearanceInMFile(classFile.Classes)))
 	for _,class := range classFile.Classes {
-		methodGenerators, sortedMethodsInfo := getMethodsGenerators(&class)
+		methodGenerators, sortedMethodsInfo := getMethodsGenerators(&class, NSCodingProtocols, NSCopyingProtocols)
 
 		for _, methodInfo := range sortedMethodsInfo {
 			methodBytes, err := methodGenerators[methodInfo](&class)
@@ -98,11 +98,20 @@ type templateGenerator func(*parser.ObjCClass) ([]byte, error)
 // Returns a map whose keys are pointers to all the structs "MethodInfo" present in "class" and the values are
 // the "templateGenerator" for each MethodInfo.
 // The second return value contains a slice with the map keys sorted backwards as defined by "MethodsInfoByPosStart"
-func getMethodsGenerators(class *parser.ObjCClass) (map[*parser.MethodInfo]templateGenerator, []*parser.MethodInfo) {
-	generatorByMethod := map[*parser.MethodInfo]templateGenerator{
-		&class.NSCodingInfo.InitWithCoder:   getNSCodingInit,
-		&class.NSCodingInfo.EncodeWithCoder: getNSCodingEncode,
-		&class.NSCopyingInfo.CopyWithZone:   getNSCopying,
+func getMethodsGenerators(class *parser.ObjCClass, NSCodingProtocols, NSCopyingProtocols []string) (map[*parser.MethodInfo]templateGenerator, []*parser.MethodInfo) {
+	fmt.Println(class.Name, NSCodingProtocols, NSCopyingProtocols)
+
+	generatorByMethod := map[*parser.MethodInfo]templateGenerator{}
+
+	if class.ConformsAnyProtocol(NSCodingProtocols...) {
+		fmt.Println("- Let's generate coding")
+		generatorByMethod[&class.NSCodingInfo.InitWithCoder] = getNSCodingInit
+		generatorByMethod[&class.NSCodingInfo.EncodeWithCoder] = getNSCodingEncode
+	}
+
+	if class.ConformsAnyProtocol(NSCopyingProtocols...) {
+		fmt.Println("- Let's generate coping")
+		generatorByMethod[&class.NSCopyingInfo.CopyWithZone] = getNSCopying
 	}
 
 	methods := make([]*parser.MethodInfo, 0, len(generatorByMethod))

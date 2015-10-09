@@ -65,6 +65,24 @@ func (oc *ObjCClass) IsDirectChildOfNSObject() bool {
 	return oc.Parent == nsObjectToken
 }
 
+func (oc *ObjCClass) ConformsProtocol(protocol string) bool {
+	for _,classProto := range oc.Protocols {
+		if classProto == protocol {
+			return true
+		}
+	}
+	return false;
+}
+
+func (oc *ObjCClass) ConformsAnyProtocol(protocols... string) bool {
+	for _,protocol := range protocols {
+		if oc.ConformsProtocol(protocol){
+			return true
+		}
+	}
+	return false;
+}
+
 type MethodInfo struct {
 	Name             string
 	PosStart, PosEnd int

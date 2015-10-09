@@ -107,7 +107,7 @@ func (p Parser) getClasses(headerFileBytes, implFileBytes []byte) []ObjCClass {
 		// Check the tags to know if the class needs to be processed
 		tag := strings.TrimSpace(string(matchedInterface[interfaceRegexpTagIndex]))
 		if (p.mustExcludeClassWithTag(tag)) {
-			fmt.Fprintf(os.Stderr, "Ignoring class %v. Tag {%v} is either equal to parser.ExcludeTag (%v) or it isn't equal to parser.IncludeTag (%v)\n", className, tag, p.ExcludeTag, p.IncludeTag)
+			fmt.Fprintf(os.Stderr, "Ignoring class %v. Tag {%v} is either equal to parser.ExcludeTag {%v} or it isn't equal to parser.IncludeTag {%v}\n", className, tag, p.ExcludeTag, p.IncludeTag)
 			continue
 		}
 
@@ -121,6 +121,10 @@ func (p Parser) getClasses(headerFileBytes, implFileBytes []byte) []ObjCClass {
 		// Get the whole @implementation from the implementation file
 		implRegexp := regexp.MustCompile(`(?ms:^\s?@implementation\s+` + className + `\s+.*?@end)`)
 		matchedImpl := implRegexp.FindIndex(implFileBytes)
+		if matchedImpl == nil {
+			fmt.Fprintf(os.Stderr, "Ignoring class %v.  \"@implementation\" statement not found\n", className)
+			continue
+		}
 		implBytes := implFileBytes[matchedImpl[0]:matchedImpl[1]]
 
 		classesInfo = append(classesInfo, NewObjCClass(className, interfaceHBytes, interfaceMBytes, implBytes, matchedImpl[0]))

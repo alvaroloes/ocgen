@@ -10,6 +10,11 @@ import (
 	"strings"
 )
 
+const (
+	defaultNSCodingProtocolName = "NSCoding"
+	defaultNSCopyingProtocolName = "NSCopying"
+)
+
 var params struct {
 	extraNSCodingProtocols string
 	extraNSCopyingProtocols string
@@ -32,15 +37,15 @@ func main() {
 	}
 
 	parser := parser.NewParser()
-	extraNSCoding := strings.Split(params.extraNSCodingProtocols,",")
-	extraNSCopying := strings.Split(params.extraNSCopyingProtocols,",")
+	NSCodingProtocols := append([]string{defaultNSCodingProtocolName}, strings.Split(params.extraNSCodingProtocols,",")...)
+	NSCopyingProtocols := append([]string{defaultNSCopyingProtocolName}, strings.Split(params.extraNSCopyingProtocols,",")...)
 
 	for _, dir := range flag.Args() {
-		processDirectory(parser, dir, extraNSCoding, extraNSCopying, backupDir)
+		processDirectory(parser, dir, NSCodingProtocols, NSCopyingProtocols, backupDir)
 	}
 }
 
-func processDirectory(parser parser.Parser, dir string, extraNSCoding, extraNSCopying []string, backupDir string) {
+func processDirectory(parser parser.Parser, dir string, NSCodingProtocols, NSCopyingProtocols []string, backupDir string) {
 	// Get all the header files under the directory
 	fileNames := parser.GetParseableFiles(dir)
 
@@ -53,7 +58,7 @@ func processDirectory(parser parser.Parser, dir string, extraNSCoding, extraNSCo
 
 		//Stop here if no classes where found
 		if len(classFile.Classes) > 0 {
-			err = generator.GenerateMethods(classFile, backupDir)
+			err = generator.GenerateMethods(classFile, NSCodingProtocols, NSCopyingProtocols, backupDir)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			}
