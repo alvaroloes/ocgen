@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"log"
 	"regexp"
 	"strings"
 )
@@ -167,7 +166,6 @@ func extractMethodInfo(methodName, className string, methodSignatureRegexp *rege
 	matchedMethod := methodSignatureRegexp.FindIndex(implBytes)
 
 	if matchedMethod == nil {
-		log.Printf(`Method not found (Regexp: %v) in class "%v"\n`, methodSignatureRegexp, className)
 		// There is no previous method, the position for the new one will be just before @end
 		matchedEnd := endRegexp.FindIndex(implBytes)
 		methodInfo.PosStart, methodInfo.PosEnd = matchedEnd[0], matchedEnd[0]

@@ -31,6 +31,10 @@ func GenerateMethods(classFile *parser.ObjCClassFile, NSCodingProtocols, NSCopyi
 	// inserting the new methods
 	sort.Sort(sort.Reverse(ClassesByAppearanceInMFile(classFile.Classes)))
 	for _,class := range classFile.Classes {
+		if len(class.Properties) == 0 {
+			fmt.Fprintf(os.Stderr, "Ignoring class %v. It has no properties", class.Name)
+			continue
+		}
 		methodGenerators, sortedMethodsInfo := getMethodsGenerators(&class, NSCodingProtocols, NSCopyingProtocols)
 
 		for _, methodInfo := range sortedMethodsInfo {
@@ -99,18 +103,14 @@ type templateGenerator func(*parser.ObjCClass) ([]byte, error)
 // the "templateGenerator" for each MethodInfo.
 // The second return value contains a slice with the map keys sorted backwards as defined by "MethodsInfoByPosStart"
 func getMethodsGenerators(class *parser.ObjCClass, NSCodingProtocols, NSCopyingProtocols []string) (map[*parser.MethodInfo]templateGenerator, []*parser.MethodInfo) {
-	fmt.Println(class.Name, NSCodingProtocols, NSCopyingProtocols)
-
 	generatorByMethod := map[*parser.MethodInfo]templateGenerator{}
 
 	if class.ConformsAnyProtocol(NSCodingProtocols...) {
-		fmt.Println("- Let's generate coding")
 		generatorByMethod[&class.NSCodingInfo.InitWithCoder] = getNSCodingInit
 		generatorByMethod[&class.NSCodingInfo.EncodeWithCoder] = getNSCodingEncode
 	}
 
 	if class.ConformsAnyProtocol(NSCopyingProtocols...) {
-		fmt.Println("- Let's generate coping")
 		generatorByMethod[&class.NSCopyingInfo.CopyWithZone] = getNSCopying
 	}
 

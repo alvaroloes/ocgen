@@ -51,8 +51,16 @@ func main() {
 	}
 
 	parser := parser.NewParser()
-	NSCodingProtocols := append([]string{defaultNSCodingProtocolName}, strings.Split(params.extraNSCodingProtocols,",")...)
-	NSCopyingProtocols := append([]string{defaultNSCopyingProtocolName}, strings.Split(params.extraNSCopyingProtocols,",")...)
+
+	NSCodingProtocols := []string{defaultNSCodingProtocolName}
+	if len(params.extraNSCodingProtocols) > 0 {
+		NSCodingProtocols = append(NSCodingProtocols, strings.Split(params.extraNSCodingProtocols, ",")...)
+	}
+
+	NSCopyingProtocols := []string{defaultNSCopyingProtocolName}
+	if len(params.extraNSCopyingProtocols) > 0 {
+		NSCopyingProtocols = append(NSCopyingProtocols, strings.Split(params.extraNSCopyingProtocols, ",")...)
+	}
 
 	for _, dir := range flag.Args() {
 		processDirectory(parser, dir, NSCodingProtocols, NSCopyingProtocols, backupDir)
