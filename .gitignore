@@ -1,4 +1,5 @@
 fixtures/
 test/
+bin/
 .idea/
 *.iml
