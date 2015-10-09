@@ -50,8 +50,6 @@ type ObjCClass struct {
 	Parent            string
 	Protocols         []string
 	Properties        []Property // These are also extracted form the implementation file
-	ConformsNSCoding  bool
-	ConformsNSCopying bool
 
 	// These fields are extracted from the implementation file
 	NSCodingInfo struct {
@@ -82,9 +80,6 @@ func NewObjCClass(className string, hInterfaceBytes, mInterfaceBytes, implBytes 
 		Parent:     parent,
 		Protocols:  protocols,
 		Properties: mergeProperties(propertiesFromH, propertiesFromM),
-		//TODO: Detect if the class conforms the protocols taking into account the parent protocols too
-		ConformsNSCoding:  true,
-		ConformsNSCopying: true,
 	}
 
 	class.NSCodingInfo.InitWithCoder = extractMethodInfo(codingInitMethodName, className, codingInitMethodRegexp, implBytes, implBytesOffset)
