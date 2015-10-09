@@ -7,9 +7,12 @@ import (
 
 	"github.com/alvaroloes/ocgen/generator"
 	"github.com/alvaroloes/ocgen/parser"
+	"strings"
 )
 
 var params struct {
+	extraNSCodingProtocols string
+	extraNSCopyingProtocols string
 	backup    bool
 	backupDir string
 }
@@ -29,13 +32,15 @@ func main() {
 	}
 
 	parser := parser.NewParser()
+	extraNSCoding := strings.Split(params.extraNSCodingProtocols,",")
+	extraNSCopying := strings.Split(params.extraNSCopyingProtocols,",")
 
 	for _, dir := range flag.Args() {
-		processDirectory(parser, dir, backupDir)
+		processDirectory(parser, dir, extraNSCoding, extraNSCopying, backupDir)
 	}
 }
 
-func processDirectory(parser parser.Parser, dir, backupDir string) {
+func processDirectory(parser parser.Parser, dir string, extraNSCoding, extraNSCopying []string, backupDir string) {
 	// Get all the header files under the directory
 	fileNames := parser.GetParseableFiles(dir)
 
@@ -62,7 +67,13 @@ func configureUsage() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] directory1 [directory2,...]\n", os.Args[0])
 		flag.PrintDefaults()
 	}
-	flag.BoolVar(&params.backup, "backup", true, "Whether to create a backup of all files before modifying them")
-	flag.StringVar(&params.backupDir, "backupDir", "./.ocgen", "The directory where the backups will be placed if 'backup=true'")
+
+	extraProtoDescription := "A comma separated list (without spaces) of protocol names that will be considered as if they were %v. " +
+	                         "This is useful if your class does not conform %v directly, but through another protocol that conforms it. " +
+	                         "Example: extra%vProtocols=\"MyProtocolThatConforms%v,OtherProtocolThatConforms%v\""
+	flag.StringVar(&params.extraNSCodingProtocols, "extraNSCodingProtocols", "", strings.Replace(extraProtoDescription,"%v","NSCoding",-1))
+	flag.StringVar(&params.extraNSCopyingProtocols, "extraNSCopyingProtocols", "", strings.Replace(extraProtoDescription,"%v","NSCopying",-1))
+	flag.BoolVar(&params.backup, "backup", false, "Whether to create a backup of all files before modifying them")
+	flag.StringVar(&params.backupDir, "backupDir", "./.ocgen", "The directory where the backups will be placed if 'backup' is present")
 	flag.Parse()
 }
