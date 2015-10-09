@@ -8,7 +8,10 @@ import (
 	"github.com/alvaroloes/ocgen/generator"
 	"github.com/alvaroloes/ocgen/parser"
 	"strings"
+	"path/filepath"
 )
+
+const version = "0.5.0"
 
 const (
 	defaultNSCodingProtocolName = "NSCoding"
@@ -16,6 +19,7 @@ const (
 )
 
 var params struct {
+	printVersion, printHelp bool
 	extraNSCodingProtocols string
 	extraNSCopyingProtocols string
 	backup    bool
@@ -27,6 +31,16 @@ func main() {
 
 	if flag.NArg() == 0 {
 		fmt.Fprintln(os.Stderr, "At least one directory must be specified")
+		flag.Usage()
+		return
+	}
+
+	if params.printVersion {
+		fmt.Printf("OCGen v%v",version)
+		return
+	}
+
+	if params.printHelp {
 		flag.Usage()
 		return
 	}
@@ -69,7 +83,8 @@ func processDirectory(parser parser.Parser, dir string, NSCodingProtocols, NSCop
 func configureUsage() {
 	// Tune a little the "usage" message
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [options] directory1 [directory2,...]\n", os.Args[0])
+		executableName := filepath.Base(os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] directory1 [directory2,...]\n", executableName)
 		flag.PrintDefaults()
 	}
 
@@ -80,5 +95,7 @@ func configureUsage() {
 	flag.StringVar(&params.extraNSCopyingProtocols, "extraNSCopyingProtocols", "", strings.Replace(extraProtoDescription,"%v","NSCopying",-1))
 	flag.BoolVar(&params.backup, "backup", false, "Whether to create a backup of all files before modifying them")
 	flag.StringVar(&params.backupDir, "backupDir", "./.ocgen", "The directory where the backups will be placed if 'backup' is present")
+	flag.BoolVar(&params.printVersion, "v", false, "Prints the current version")
+	flag.BoolVar(&params.printHelp, "h", false, "Prints the usage")
 	flag.Parse()
 }

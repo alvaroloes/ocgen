@@ -27,14 +27,12 @@ Then you need to use that macro to tag the class interface, putting it at the en
 
 ## TODO
 ### High priority
-* How to handle classes that conforms to the protocols indirectly through another protocol?
+* Update README
 * Add instruction about how to execute it in every compilation
 * Restore the backed file if there was an error in the write operation inside the `GenerateMethods`
 
 ### Medium priority
-* Provide the ability to handle all classes **except** those with OCGEN_IGNORE
 * Add concurrency
-* Allow to specify a directory to store the backups
 
 ### Low priority
 * Allow installing through Alcatraz
