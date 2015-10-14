@@ -1,7 +1,7 @@
 # OCGen
 The Objective C code generator.
 
-Developed by demand due to my job needs, this tools aims to generate boring and repetitive code to let you focus on more
+Developed by demand due to my job needs, this tool aims to generate boring and repetitive code to let you focus on more
 interesting and pleasant things.
 
 Right now it is able to generate all the code a class needs to conform the `NSCopying` and `NSCoding` protocols.
@@ -19,7 +19,20 @@ tool could ever do :-)
 *This tool is under development and unexpected behavior may arise. Please be sure your project is using a version control system, like git, 
 before using OCGen, so you can revert any unwanted changes the tool has done.*
 
+
 ## Usage
+### Download
+There are two ways of getting OCGen:
+
+1. Go to _Releases_ github section and download the latest version. 
+1. If you have the Go compiler, you can either compile it from source or "go-get" it:
+```
+go get github.com/alvaroloes/ocgen
+```
+
+*NOTE:* Please read the section _"Contribution or compiling from source"_ at the bottom of the page before choosing the second option.
+
+
 ### Basic
 Just call `ocgen` specifying the directory under which your classes are (it could be the root of your project or any other
 more specific folder, such as `/models`)
@@ -156,7 +169,7 @@ Now, each change you do to your classes properties will be reflected in the gene
 behavior in Objective C)
 * Read only properties not backed by an *ivar* (with a defined getter) are not supported.
 
-## Contribution
+## Contribution or compiling from source
 If you find any bug or want a feature to be added, feel free to file an issue. 
 
 If you want to compile the code from source or contribute with a pull request, please take into account that *you need to 
