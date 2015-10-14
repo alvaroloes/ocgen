@@ -156,6 +156,18 @@ Now, each change you do to your classes properties will be reflected in the gene
 behavior in Objective C)
 * Read only properties not backed by an *ivar* (with a defined getter) are not supported.
 
+## Contribution
+If you find any bug or want a feature to be added, feel free to file an issue. 
+
+If you want to compile the code from source or contribute with a pull request, please take into account that *you need to 
+build Go directly from the master branch*. The reason behind this is that some improvements where added
+to the `text/template` package after the Go 1.5 release that make the template code much more readable (specifically, the addition of {{- }} and {{ -}}
+that allows newlines to be stripped from the generated text)
+
+To build Go from source, you can follow the steps in the official site: https://golang.org/doc/install/source
+ 
+Thanks!
+
 ## TODO
 * Add executable options to customize the tags used to mark the classes
 * Be able to restore a class from the backed up version
