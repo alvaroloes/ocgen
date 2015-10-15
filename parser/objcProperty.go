@@ -12,6 +12,7 @@ const (
 	ivarAccessor = "->_"
 
 	defaultCoderType = "Integer"
+	objectCoderType = "Object"
 )
 
 var coderTypePerClass = map[string]string {
@@ -69,6 +70,9 @@ func (p *Property) Accessor() string {
 }
 
 func (p *Property) CoderType() string {
+	if p.IsObject() {
+		return objectCoderType
+	}
 	coderType, exists := coderTypePerClass[p.Class]
 	if !exists {
 		coderType = defaultCoderType
