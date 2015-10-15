@@ -62,7 +62,7 @@ func (p *Property) IsReadonly() bool {
 }
 
 // Returns either the property or the ivar accessor
-func (p *Property) Accessor() string {
+func (p *Property) WriteAccessor() string {
 	if (p.IsReadonly()) {
 		return ivarAccessor
 	}

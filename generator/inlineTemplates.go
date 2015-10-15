@@ -21,16 +21,16 @@ var NSCopyingText = `
     {{- end}}
     if (copy != nil)
     { {{range .Properties}}
-        copy{{.Accessor}}{{.Name}} = {{if .IsObject -}}
+        copy{{.WriteAccessor}}{{.Name}} = {{if .IsObject -}}
                                           {{if eq .Class "NSArray" -}}
-                                              [[NSArray alloc] initWithArray:self{{.Accessor}}{{.Name}} copyItems:YES];
+                                              [[NSArray alloc] initWithArray:self.{{.Name}} copyItems:YES];
                                           {{- else if .IsWeak -}}
-                                              self{{.Accessor}}{{.Name}};
+                                              self.{{.Name}};
                                           {{- else -}}
-                                              [self{{.Accessor}}{{.Name}} copyWithZone:zone];
+                                              [self.{{.Name}} copyWithZone:zone];
                                           {{- end}}
                                       {{- else -}}
-                                          self{{.Accessor}}{{.Name}};
+                                          self.{{.Name}};
                                       {{- end}}
     {{- end}}
     }
@@ -74,9 +74,9 @@ var NSCodingEncodeText = `
     }
     {{- end}}{{range .Properties}}
     {{if .IsWeak -}}
-        [coder encodeConditionalObject:_{{.Name}} forKey:@"{{.Name}}"];
+        [coder encodeConditionalObject:self.{{.Name}} forKey:@"{{.Name}}"];
     {{- else -}}
-        [coder encode{{.CoderType}}:_{{.Name}} forKey:@"{{.Name}}"];
+        [coder encode{{.CoderType}}:self.{{.Name}} forKey:@"{{.Name}}"];
     {{- end}}
 {{- end}}
 }`
